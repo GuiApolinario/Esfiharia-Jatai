@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Esfiharia Jataí — Peça sua esfiha e retire no local</title>
+  <meta name="description" content="Esfihas salgadas, doces e bebidas geladas. Monte seu pedido, escolha o horário e retire quentinho na Esfiharia Jataí.">
+  <meta name="theme-color" content="#b7302a">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥟</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <!-- ============================================================ header -->
+  <header class="header">
+    <div class="wrap header__inner">
+      <a class="brand" href="/">
+        <span class="brand__mark" aria-hidden="true">🥟</span>
+        <span>
+          <span class="brand__name" id="brandName">Esfiharia Jataí</span>
+          <span class="brand__sub">Retirada no local</span>
+        </span>
+      </a>
+
+      <span class="status status--closed" id="storeStatus">Carregando</span>
+
+      <button class="cart-btn" id="cartToggle" aria-label="Abrir carrinho">
+        <span aria-hidden="true">🛒</span>
+        <span class="cart-btn__label">Meu pedido</span>
+        <span class="cart-btn__count" id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================== hero -->
+  <section class="hero">
+    <div class="wrap hero__inner">
+      <div>
+        <span class="hero__badge">🛍️ Somente retirada no local</span>
+        <h1 class="hero__title">Esfiha quentinha,<br><em>na hora que você marcar.</em></h1>
+        <p class="hero__text" id="heroTagline">
+          Monte seu pedido, escolha o horário da retirada e a gente prepara tudo para você buscar sem fila.
+        </p>
+
+        <div class="hero__actions">
+          <a class="btn btn--primary btn--lg" href="#cardapio">Ver cardápio</a>
+          <a class="btn btn--ghost btn--lg" href="#como-funciona">Como funciona</a>
+        </div>
+
+        <div class="hero__facts">
+          <div class="fact">
+            <div class="fact__label">Endereço</div>
+            <div class="fact__value" id="factAddress">—</div>
+          </div>
+          <div class="fact">
+            <div class="fact__label">Hoje</div>
+            <div class="fact__value" id="factHours">—</div>
+          </div>
+          <div class="fact">
+            <div class="fact__label">Pedidos pelo</div>
+            <div class="fact__value" id="factPhone">WhatsApp</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__card" id="como-funciona">
+        <h3>Como funciona</h3>
+        <ol class="steps">
+          <li><span><strong>Escolha suas esfihas</strong> Salgadas, doces e bebidas geladas no cardápio.</span></li>
+          <li><span><strong>Marque o horário</strong> Você define o dia e a hora da retirada.</span></li>
+          <li><span><strong>Envie pelo WhatsApp</strong> O pedido chega prontinho para a gente confirmar.</span></li>
+          <li><span><strong>Retire no balcão</strong> Pague na hora ou pelo Pix combinado no WhatsApp.</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== cardápio -->
+  <main class="menu wrap" id="cardapio">
+    <div id="noticeSlot"></div>
+
+    <div class="section-head">
+      <h2>Nosso cardápio</h2>
+      <p>Toque em <strong>Adicionar</strong> e escolha a quantidade de cada sabor.</p>
+    </div>
+
+    <nav class="catnav" id="catnav" aria-label="Categorias do cardápio"></nav>
+
+    <div id="menuRoot">
+      <div class="grid">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================ rodapé -->
+  <footer class="footer">
+    <div class="wrap footer__grid">
+      <div>
+        <h4 id="footerName">Esfiharia Jataí</h4>
+        <p id="footerTagline">Esfihas artesanais feitas na hora.</p>
+        <p style="margin-top:.9rem">📍 <span id="footerAddress">—</span></p>
+        <p>💬 <a id="footerWhats" href="#" target="_blank" rel="noopener">Falar no WhatsApp</a></p>
+      </div>
+      <div>
+        <h4>Horários</h4>
+        <ul id="footerHours"></ul>
+      </div>
+      <div>
+        <h4>Importante</h4>
+        <p>Trabalhamos <strong>somente com retirada no local</strong>. Não fazemos entrega.</p>
+        <p>O pagamento é combinado pelo WhatsApp ou feito na retirada.</p>
+      </div>
+    </div>
+    <div class="wrap footer__bottom">
+      <span>© <span id="year">2026</span> <span id="footerName2">Esfiharia Jataí</span></span>
+      <a href="/admin">Área do administrador</a>
+    </div>
+  </footer>
+
+  <!-- ========================================================== carrinho -->
+  <div class="overlay" id="overlay"></div>
+
+  <aside class="drawer" id="cartDrawer" aria-label="Meu pedido" aria-hidden="true">
+    <div class="drawer__head">
+      <h2>Meu pedido</h2>
+      <button class="icon-btn" id="clearCart" title="Esvaziar pedido" aria-label="Esvaziar pedido">🗑️</button>
+      <button class="icon-btn" id="closeCart" aria-label="Fechar carrinho">✕</button>
+    </div>
+    <div class="drawer__body" id="cartBody"></div>
+    <div class="drawer__foot" id="cartFoot" hidden>
+      <div class="totals">
+        <div class="totals__row"><span id="cartItemsLabel">0 itens</span><span id="cartSubtotal">R$ 0,00</span></div>
+        <div class="totals__row totals__row--main"><span>Total</span><span id="cartTotal">R$ 0,00</span></div>
+      </div>
+      <button class="btn btn--primary btn--block btn--lg" id="checkoutBtn">Agendar retirada →</button>
+    </div>
+  </aside>
+
+  <!-- ========================================================== checkout -->
+  <div class="modal" id="checkoutModal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__panel">
+      <div class="modal__head">
+        <h2 id="checkoutTitle">Finalizar pedido</h2>
+        <button class="icon-btn" data-close-modal aria-label="Fechar">✕</button>
+      </div>
+
+      <form class="modal__body" id="checkoutForm" novalidate>
+        <div class="callout">
+          <span aria-hidden="true">🛍️</span>
+          <span>Seu pedido é para <strong>retirada no local</strong>. Ao enviar, abrimos o WhatsApp da esfiharia com todos os detalhes.</span>
+        </div>
+
+        <div class="field" id="fieldName">
+          <label for="customerName">Seu nome</label>
+          <input class="input" id="customerName" name="name" type="text" autocomplete="name"
+                 placeholder="Ex.: Maria Silva" required>
+          <span class="field__error">Informe seu nome.</span>
+        </div>
+
+        <div class="field" id="fieldPhone">
+          <label for="customerPhone">Seu WhatsApp <span class="field__hint">(para a gente confirmar)</span></label>
+          <input class="input" id="customerPhone" name="phone" type="tel" inputmode="numeric"
+                 autocomplete="tel" placeholder="(15) 99999-9999" maxlength="16" required>
+          <span class="field__error">Informe um telefone com DDD.</span>
+        </div>
+
+        <div class="field" id="fieldDate">
+          <span class="field__label">Dia da retirada</span>
+          <div class="chips" id="dateChips"></div>
+          <span class="field__error">Escolha o dia da retirada.</span>
+        </div>
+
+        <div class="field" id="fieldTime">
+          <span class="field__label">Horário da retirada</span>
+          <div class="chips chips--times" id="timeChips"></div>
+          <span class="field__error">Escolha o horário da retirada.</span>
+        </div>
+
+        <div class="field">
+          <label for="customerNotes">Observações <span class="field__hint">(opcional)</span></label>
+          <textarea class="textarea" id="customerNotes" name="notes"
+                    placeholder="Ex.: esfiha de carne sem cebola, embalar separado…"></textarea>
+        </div>
+
+        <div class="summary" id="orderSummary"></div>
+      </form>
+
+      <div class="modal__foot">
+        <button class="btn btn--whats btn--block btn--lg" id="sendOrder" form="checkoutForm" type="submit">
+          <span aria-hidden="true">💬</span> Enviar pedido pelo WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

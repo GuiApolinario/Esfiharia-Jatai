@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel do administrador — Esfiharia Jataí</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#2a2018">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin">
+
+  <!-- ============================================================= login -->
+  <section class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-card__mark" aria-hidden="true">🥟</div>
+      <h1>Painel da Esfiharia</h1>
+      <p class="login-card__sub">Entre para gerenciar o cardápio e as configurações.</p>
+
+      <div class="alert alert--error" id="loginError"></div>
+
+      <form id="loginForm">
+        <div class="field">
+          <label for="username">Usuário</label>
+          <input class="input" id="username" name="username" type="text"
+                 autocomplete="username" placeholder="admin" required autofocus>
+        </div>
+        <div class="field">
+          <label for="password">Senha</label>
+          <input class="input" id="password" name="password" type="password"
+                 autocomplete="current-password" placeholder="••••••••" required>
+        </div>
+        <button class="btn btn--primary btn--block btn--lg" type="submit" id="loginBtn">Entrar</button>
+      </form>
+
+      <a class="login-back" href="/">← Voltar para o site</a>
+    </div>
+  </section>
+
+  <!-- ============================================================= painel -->
+  <div class="admin-shell" id="adminShell">
+    <header class="admin-top">
+      <div class="admin-top__brand"><span aria-hidden="true">🥟</span> <span>Esfiharia Jataí</span></div>
+      <span class="admin-top__user" id="adminUser"></span>
+      <a class="btn btn--outline-light" href="/" target="_blank" rel="noopener">Ver o site ↗</a>
+      <button class="btn btn--outline-light" id="logoutBtn">Sair</button>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab is-active" data-tab="produtos">🥟 Produtos</button>
+      <button class="tab" data-tab="categorias">🗂️ Categorias</button>
+      <button class="tab" data-tab="loja">🏪 Loja e horários</button>
+      <button class="tab" data-tab="conta">🔒 Minha conta</button>
+    </nav>
+
+    <main class="admin-main">
+
+      <!-- ------------------------------------------------------ produtos -->
+      <section class="panel is-active" data-panel="produtos">
+        <div class="panel__head">
+          <h2>Produtos</h2>
+          <button class="btn btn--primary" id="newProductBtn">+ Novo produto</button>
+          <p>Cadastre esfihas e bebidas com foto, descrição e preço. Desligue o botão de disponível para esconder um item do cardápio sem apagá-lo.</p>
+        </div>
+
+        <div class="toolbar">
+          <input class="input" id="productSearch" type="search" placeholder="Buscar produto…">
+          <select class="select" id="productFilter"><option value="">Todas as categorias</option></select>
+        </div>
+
+        <div class="list" id="productList"></div>
+      </section>
+
+      <!-- ---------------------------------------------------- categorias -->
+      <section class="panel" data-panel="categorias">
+        <div class="panel__head">
+          <h2>Categorias</h2>
+          <button class="btn btn--primary" id="newCategoryBtn">+ Nova categoria</button>
+          <p>As categorias organizam o cardápio, por exemplo Esfihas Salgadas, Esfihas Doces e Bebidas.</p>
+        </div>
+        <div class="list" id="categoryList"></div>
+      </section>
+
+      <!-- ---------------------------------------------------------- loja -->
+      <section class="panel" data-panel="loja">
+        <div class="panel__head">
+          <h2>Loja e horários</h2>
+          <p>Dados que aparecem no site e regras do agendamento de retirada.</p>
+        </div>
+
+        <div class="alert alert--success" id="settingsOk">Configurações salvas.</div>
+        <div class="alert alert--error" id="settingsError"></div>
+
+        <form id="settingsForm">
+          <div class="card-block">
+            <h3>Dados da esfiharia</h3>
+            <p class="card-block__sub">Nome, frase de apresentação e contato exibidos no site.</p>
+            <div class="form-grid form-grid--2">
+              <div class="field">
+                <label for="storeName">Nome da esfiharia</label>
+                <input class="input" id="storeName" name="store_name" type="text" required>
+              </div>
+              <div class="field">
+                <label for="storeWhats">WhatsApp que recebe os pedidos</label>
+                <input class="input" id="storeWhats" name="whatsapp" type="tel" placeholder="(15) 99736-5401" required>
+              </div>
+              <div class="field">
+                <label for="storeAddress">Endereço para retirada</label>
+                <input class="input" id="storeAddress" name="address" type="text" placeholder="Rua, número, bairro">
+              </div>
+              <div class="field">
+                <label for="storeTagline">Frase de apresentação</label>
+                <input class="input" id="storeTagline" name="tagline" type="text">
+              </div>
+            </div>
+            <div class="field" style="margin-top:1rem">
+              <label for="storeNotice">Aviso no topo do cardápio <span class="field__hint">(deixe vazio para não exibir)</span></label>
+              <input class="input" id="storeNotice" name="notice" type="text" placeholder="Ex.: Hoje temos esfiha de costela!">
+            </div>
+          </div>
+
+          <div class="card-block">
+            <h3>Horário de funcionamento</h3>
+            <p class="card-block__sub">Só aparecem para o cliente horários dentro da janela de cada dia.</p>
+            <div class="hours-grid" id="hoursGrid"></div>
+          </div>
+
+          <div class="card-block">
+            <h3>Regras da retirada</h3>
+            <p class="card-block__sub">Controlam os horários oferecidos no agendamento.</p>
+            <div class="form-grid form-grid--2">
+              <div class="field">
+                <label for="leadMinutes">Tempo mínimo de preparo <span class="field__hint">(minutos)</span></label>
+                <input class="input" id="leadMinutes" name="lead_minutes" type="number" min="0" max="480" step="5" required>
+              </div>
+              <div class="field">
+                <label for="slotMinutes">Intervalo entre horários <span class="field__hint">(minutos)</span></label>
+                <input class="input" id="slotMinutes" name="slot_minutes" type="number" min="5" max="120" step="5" required>
+              </div>
+              <div class="field">
+                <label for="maxDays">Agendar com até <span class="field__hint">(dias de antecedência)</span></label>
+                <input class="input" id="maxDays" name="max_days_ahead" type="number" min="0" max="30" step="1" required>
+              </div>
+              <div class="field">
+                <label for="minOrder">Pedido mínimo <span class="field__hint">(0 = sem mínimo)</span></label>
+                <input class="input" id="minOrder" name="min_order" type="text" placeholder="0,00">
+              </div>
+            </div>
+          </div>
+
+          <div class="sticky-save">
+            <p>As alterações valem para o site assim que você salvar.</p>
+            <button class="btn btn--primary" type="submit" id="saveSettingsBtn">Salvar configurações</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- --------------------------------------------------------- conta -->
+      <section class="panel" data-panel="conta">
+        <div class="panel__head">
+          <h2>Minha conta</h2>
+          <p>Troque a senha de acesso ao painel.</p>
+        </div>
+
+        <div class="card-block" style="max-width:520px">
+          <h3>Alterar senha</h3>
+          <p class="card-block__sub">Depois de salvar você precisará entrar de novo com a senha nova.</p>
+
+          <div class="alert alert--error" id="passwordError"></div>
+          <div class="alert alert--success" id="passwordOk">Senha alterada! Entre novamente.</div>
+
+          <form id="passwordForm">
+            <div class="field">
+              <label for="currentPassword">Senha atual</label>
+              <input class="input" id="currentPassword" type="password" autocomplete="current-password" required>
+            </div>
+            <div class="field">
+              <label for="newPassword">Nova senha <span class="field__hint">(mínimo 6 caracteres)</span></label>
+              <input class="input" id="newPassword" type="password" autocomplete="new-password" minlength="6" required>
+            </div>
+            <div class="field">
+              <label for="confirmPassword">Repita a nova senha</label>
+              <input class="input" id="confirmPassword" type="password" autocomplete="new-password" minlength="6" required>
+            </div>
+            <button class="btn btn--primary" type="submit">Alterar senha</button>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================================================== modal de produto -->
+  <div class="modal" id="productModal" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+    <div class="modal__backdrop" data-close="product"></div>
+    <div class="modal__panel">
+      <div class="modal__head">
+        <h2 id="productModalTitle">Novo produto</h2>
+        <button class="icon-btn" data-close="product" aria-label="Fechar">✕</button>
+      </div>
+
+      <form class="modal__body" id="productForm">
+        <div class="alert alert--error" id="productError"></div>
+
+        <div class="field">
+          <span class="field__label">Foto do produto</span>
+          <div class="uploader">
+            <div class="uploader__preview" id="imagePreview" aria-hidden="true">📷</div>
+            <div>
+              <div class="uploader__actions">
+                <button class="mini-btn" type="button" id="pickImageBtn">Escolher foto</button>
+                <button class="mini-btn mini-btn--danger" type="button" id="removeImageBtn" hidden>Remover foto</button>
+              </div>
+              <p class="uploader__hint">JPG, PNG ou WEBP até 5 MB. A imagem é reduzida automaticamente para carregar rápido.</p>
+              <input type="file" id="imageInput" accept="image/*" hidden>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="productName">Nome</label>
+          <input class="input" id="productName" type="text" placeholder="Ex.: Esfiha de Carne" required>
+        </div>
+
+        <div class="field">
+          <label for="productDescription">Descrição <span class="field__hint">(ingredientes, especificações)</span></label>
+          <textarea class="textarea" id="productDescription"
+                    placeholder="Ex.: Carne bovina moída temperada com cebola, tomate e limão."></textarea>
+        </div>
+
+        <div class="form-grid form-grid--2">
+          <div class="field">
+            <label for="productPrice">Preço (R$)</label>
+            <input class="input" id="productPrice" type="text" inputmode="decimal" placeholder="8,00" required>
+          </div>
+          <div class="field">
+            <label for="productCategory">Categoria</label>
+            <select class="select" id="productCategory"></select>
+          </div>
+          <div class="field">
+            <label for="productUnit">Unidade de venda</label>
+            <input class="input" id="productUnit" type="text" placeholder="unidade, lata 350ml, dúzia…">
+          </div>
+          <div class="field">
+            <label for="productOrder">Ordem no cardápio</label>
+            <input class="input" id="productOrder" type="number" step="1" placeholder="1">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="productAvailable" checked>
+            <span class="switch__track"></span>
+            <span>Disponível no cardápio</span>
+          </label>
+        </div>
+      </form>
+
+      <div class="modal__foot" style="display:flex; gap:.7rem">
+        <button class="btn btn--ghost" type="button" data-close="product">Cancelar</button>
+        <button class="btn btn--primary" type="submit" form="productForm" id="saveProductBtn" style="flex:1">Salvar produto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================== modal de categoria -->
+  <div class="modal" id="categoryModal" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+    <div class="modal__backdrop" data-close="category"></div>
+    <div class="modal__panel" style="max-height:none">
+      <div class="modal__head">
+        <h2 id="categoryModalTitle">Nova categoria</h2>
+        <button class="icon-btn" data-close="category" aria-label="Fechar">✕</button>
+      </div>
+
+      <form class="modal__body" id="categoryForm">
+        <div class="alert alert--error" id="categoryError"></div>
+        <div class="form-grid form-grid--2">
+          <div class="field">
+            <label for="categoryName">Nome</label>
+            <input class="input" id="categoryName" type="text" placeholder="Ex.: Esfihas Doces" required>
+          </div>
+          <div class="field">
+            <label for="categoryIcon">Ícone <span class="field__hint">(um emoji)</span></label>
+            <input class="input" id="categoryIcon" type="text" maxlength="4" placeholder="🍫">
+          </div>
+          <div class="field">
+            <label for="categoryOrder">Ordem no cardápio</label>
+            <input class="input" id="categoryOrder" type="number" step="1" placeholder="1">
+          </div>
+        </div>
+      </form>
+
+      <div class="modal__foot" style="display:flex; gap:.7rem">
+        <button class="btn btn--ghost" type="button" data-close="category">Cancelar</button>
+        <button class="btn btn--primary" type="submit" form="categoryForm" style="flex:1">Salvar categoria</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>
