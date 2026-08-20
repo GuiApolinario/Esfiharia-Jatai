@@ -14,7 +14,7 @@ export const isConfigured =
   SUPABASE_ANON_KEY.trim().length > 30;
 
 export const SETUP_MESSAGE =
-  'O site ainda não foi conectado ao banco de dados. Abra o arquivo docs/js/config.js e preencha o endereço e a chave do seu projeto no Supabase.';
+  'O site ainda não foi conectado ao banco de dados. Abra o arquivo js/config.js e preencha o endereço e a chave do seu projeto no Supabase.';
 
 export const OFFLINE_MESSAGE =
   'Não foi possível carregar os dados do cardápio. Verifique sua conexão com a internet e atualize a página.';
