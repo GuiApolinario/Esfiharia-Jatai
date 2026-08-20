@@ -1,6 +1,7 @@
 /* Site público da Esfiharia Jataí: cardápio, carrinho e agendamento da retirada. */
 
-import { $, $$, api, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js';
+import { $, $$, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js';
+import { fetchCatalog } from './data.js';
 import * as cart from './cart.js';
 import {
   availableDays, isOpenNow, pickupLabel, timeLabel, todayHoursLabel, WEEKDAYS,
@@ -26,7 +27,7 @@ async function init() {
   cart.subscribe(onCartChange);
 
   try {
-    const data = await api('/api/catalog');
+    const data = await fetchCatalog();
     state.store = data.store;
     state.categories = data.categories;
     state.products = data.products;

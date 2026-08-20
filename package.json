@@ -1,24 +1,9 @@
 {
   "name": "esfiharia-jatai",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Site de pedidos da Esfiharia Jatai - cardapio, carrinho, agendamento de retirada e painel administrativo",
-  "type": "module",
-  "main": "server/index.js",
-  "engines": {
-    "node": ">=20"
-  },
+  "description": "Site de pedidos da Esfiharia Jatai: cardapio, agendamento de retirada, envio pelo WhatsApp e painel administrativo. Site estatico no GitHub Pages com dados no Supabase.",
   "scripts": {
-    "start": "node server/index.js",
-    "dev": "node --watch server/index.js",
-    "seed": "node server/seed.js",
-    "reset-admin": "node server/reset-admin.js"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^11.10.0",
-    "cookie-parser": "^1.4.7",
-    "express": "^4.21.2",
-    "multer": "^2.0.1"
+    "dev": "npx --yes serve docs --listen 3000"
   }
 }

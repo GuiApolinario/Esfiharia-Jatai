@@ -26,9 +26,9 @@
 
       <form id="loginForm">
         <div class="field">
-          <label for="username">Usuário</label>
-          <input class="input" id="username" name="username" type="text"
-                 autocomplete="username" placeholder="admin" required autofocus>
+          <label for="email">E-mail</label>
+          <input class="input" id="email" name="email" type="email"
+                 autocomplete="username" placeholder="voce@exemplo.com" required autofocus>
         </div>
         <div class="field">
           <label for="password">Senha</label>
@@ -38,7 +38,7 @@
         <button class="btn btn--primary btn--block btn--lg" type="submit" id="loginBtn">Entrar</button>
       </form>
 
-      <a class="login-back" href="/">← Voltar para o site</a>
+      <a class="login-back" href="index.html">← Voltar para o site</a>
     </div>
   </section>
 
@@ -47,7 +47,7 @@
     <header class="admin-top">
       <div class="admin-top__brand"><span aria-hidden="true">🥟</span> <span>Esfiharia Jataí</span></div>
       <span class="admin-top__user" id="adminUser"></span>
-      <a class="btn btn--outline-light" href="/" target="_blank" rel="noopener">Ver o site ↗</a>
+      <a class="btn btn--outline-light" href="index.html" target="_blank" rel="noopener">Ver o site ↗</a>
       <button class="btn btn--outline-light" id="logoutBtn">Sair</button>
     </header>
 
@@ -169,10 +169,10 @@
 
         <div class="card-block" style="max-width:520px">
           <h3>Alterar senha</h3>
-          <p class="card-block__sub">Depois de salvar você precisará entrar de novo com a senha nova.</p>
+          <p class="card-block__sub">Use a senha nova no próximo acesso ao painel.</p>
 
           <div class="alert alert--error" id="passwordError"></div>
-          <div class="alert alert--success" id="passwordOk">Senha alterada! Entre novamente.</div>
+          <div class="alert alert--success" id="passwordOk">Senha alterada com sucesso.</div>
 
           <form id="passwordForm">
             <div class="field">

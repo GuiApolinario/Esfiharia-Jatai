@@ -1,18 +1,9 @@
-# Dependências
+# Dependências (o site não usa nenhuma: tudo roda direto no navegador)
 node_modules/
-
-# Banco de dados e fotos enviadas pelo painel
-data/*
-!data/.gitkeep
-
-# Variáveis de ambiente
-.env
-.env.local
 
 # Sistema / editores
 .DS_Store
 Thumbs.db
 *.log
-npm-debug.log*
 .vscode/
 .idea/

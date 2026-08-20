@@ -1,6 +1,8 @@
 /* Painel do administrador: login, produtos, categorias e configurações da loja. */
 
-import { $, $$, api, escapeHtml, maskPhone, money, onlyDigits, parseMoney, toast } from './utils.js';
+import { $, $$, escapeHtml, maskPhone, money, onlyDigits, parseMoney, toast } from './utils.js';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js';
+import * as data from './data.js';
 
 const WEEKDAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
@@ -18,9 +20,17 @@ boot();
 
 async function boot() {
   bindEvents();
+
+  if (!isConfigured) {
+    showLogin();
+    $('#loginForm').hidden = true;
+    return showAlert('#loginError', SETUP_MESSAGE);
+  }
+
   try {
-    const { user } = await api('/api/auth/me');
-    await enterPanel(user);
+    const user = await data.currentUser();
+    if (user) await enterPanel(user);
+    else showLogin();
   } catch {
     showLogin();
   }
@@ -31,14 +41,14 @@ async function boot() {
 function showLogin() {
   $('#loginScreen').style.display = 'grid';
   $('#adminShell').classList.remove('is-visible');
-  $('#username').focus();
+  $('#email').focus();
 }
 
 async function enterPanel(user) {
   state.user = user;
   $('#loginScreen').style.display = 'none';
   $('#adminShell').classList.add('is-visible');
-  $('#adminUser').textContent = `Olá, ${user.name || user.username}`;
+  $('#adminUser').textContent = user.email || 'Administrador';
   await Promise.all([loadCategories(), loadProducts(), loadSettings()]);
 }
 
@@ -52,10 +62,7 @@ async function handleLogin(event) {
   error.classList.remove('is-visible');
 
   try {
-    const { user } = await api('/api/auth/login', {
-      method: 'POST',
-      body: { username: $('#username').value, password: $('#password').value },
-    });
+    const user = await data.signIn($('#email').value, $('#password').value);
     $('#password').value = '';
     await enterPanel(user);
   } catch (err) {
@@ -69,15 +76,15 @@ async function handleLogin(event) {
 }
 
 async function handleLogout() {
-  await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+  await data.signOut().catch(() => {});
   location.reload();
 }
 
 /** Quando a sessão expira, volta para o login em vez de mostrar erro solto. */
 function guard(error) {
-  if (error.status === 401) {
+  if (/sess(ã|a)o expirou|JWT|token .*expired|not authenticated/i.test(error.message)) {
     toast('Sua sessão expirou. Entre novamente.');
-    setTimeout(() => location.reload(), 1200);
+    setTimeout(() => location.reload(), 1500);
     return true;
   }
   return false;
@@ -87,7 +94,7 @@ function guard(error) {
 
 async function loadProducts() {
   try {
-    state.products = await api('/api/admin/products');
+    state.products = await data.listProducts();
     renderProducts();
   } catch (error) {
     if (!guard(error)) toast(error.message);
@@ -199,7 +206,7 @@ async function saveProduct(event) {
     description: $('#productDescription').value.trim(),
     price_cents: priceCents,
     unit: $('#productUnit').value.trim() || 'unidade',
-    category_id: $('#productCategory').value || null,
+    category_id: $('#productCategory').value ? Number($('#productCategory').value) : null,
     image: state.pendingImage,
     available: $('#productAvailable').checked,
   };
@@ -210,10 +217,8 @@ async function saveProduct(event) {
   button.textContent = 'Salvando…';
 
   try {
-    await api(
-      state.editingProductId ? `/api/admin/products/${state.editingProductId}` : '/api/admin/products',
-      { method: state.editingProductId ? 'PUT' : 'POST', body: payload }
-    );
+    if (state.editingProductId) await data.updateProduct(state.editingProductId, payload);
+    else await data.createProduct(payload);
     closeModal('#productModal');
     toast(state.editingProductId ? 'Produto atualizado.' : 'Produto cadastrado.');
     await loadProducts();
@@ -231,7 +236,7 @@ async function deleteProduct(id) {
   if (!confirm(`Excluir "${product.name}" do cardápio? Essa ação não pode ser desfeita.`)) return;
 
   try {
-    await api(`/api/admin/products/${id}`, { method: 'DELETE' });
+    await data.deleteProduct(id);
     toast('Produto excluído.');
     await loadProducts();
   } catch (error) {
@@ -241,9 +246,9 @@ async function deleteProduct(id) {
 
 async function toggleProduct(id, available) {
   try {
-    await api(`/api/admin/products/${id}`, { method: 'PUT', body: { available } });
+    await data.updateProduct(id, { available });
     const product = state.products.find((item) => item.id === id);
-    if (product) product.available = available ? 1 : 0;
+    if (product) product.available = available;
     renderProducts();
     toast(available ? 'Produto disponível no cardápio.' : 'Produto escondido do cardápio.');
   } catch (error) {
@@ -302,10 +307,7 @@ async function uploadImage(file) {
   hideAlert('#productError');
 
   try {
-    const body = new FormData();
-    body.append('image', await shrinkImage(file));
-    const { image } = await api('/api/admin/upload', { method: 'POST', body });
-    state.pendingImage = image;
+    state.pendingImage = await data.uploadImage(await shrinkImage(file));
     renderImagePreview();
   } catch (error) {
     if (!guard(error)) showAlert('#productError', error.message);
@@ -320,7 +322,7 @@ async function uploadImage(file) {
 
 async function loadCategories() {
   try {
-    state.categories = await api('/api/admin/categories');
+    state.categories = await data.listCategories();
     renderCategories();
 
     const filter = $('#productFilter');
@@ -391,10 +393,8 @@ async function saveCategory(event) {
   if (order !== '') payload.sort_order = Number(order);
 
   try {
-    await api(
-      state.editingCategoryId ? `/api/admin/categories/${state.editingCategoryId}` : '/api/admin/categories',
-      { method: state.editingCategoryId ? 'PUT' : 'POST', body: payload }
-    );
+    if (state.editingCategoryId) await data.updateCategory(state.editingCategoryId, payload);
+    else await data.createCategory(payload);
     closeModal('#categoryModal');
     toast(state.editingCategoryId ? 'Categoria atualizada.' : 'Categoria criada.');
     await Promise.all([loadCategories(), loadProducts()]);
@@ -413,7 +413,7 @@ async function deleteCategory(id) {
   if (!confirm(warning)) return;
 
   try {
-    await api(`/api/admin/categories/${id}`, { method: 'DELETE' });
+    await data.deleteCategory(id);
     toast('Categoria excluída.');
     await Promise.all([loadCategories(), loadProducts()]);
   } catch (error) {
@@ -425,7 +425,7 @@ async function deleteCategory(id) {
 
 async function loadSettings() {
   try {
-    state.settings = await api('/api/admin/settings');
+    state.settings = await data.getSettings();
     renderSettings();
   } catch (error) {
     if (!guard(error)) toast(error.message);
@@ -493,20 +493,17 @@ async function saveSettings(event) {
   button.textContent = 'Salvando…';
 
   try {
-    state.settings = await api('/api/admin/settings', {
-      method: 'PUT',
-      body: {
-        store_name: $('#storeName').value.trim(),
-        tagline: $('#storeTagline').value.trim(),
-        address: $('#storeAddress').value.trim(),
-        notice: $('#storeNotice').value.trim(),
-        whatsapp: whatsappDigits.startsWith('55') ? whatsappDigits : `55${whatsappDigits}`,
-        lead_minutes: $('#leadMinutes').value,
-        slot_minutes: $('#slotMinutes').value,
-        max_days_ahead: $('#maxDays').value,
-        min_order_cents: String(minOrder),
-        hours: collectHours(),
-      },
+    state.settings = await data.saveSettings({
+      store_name: $('#storeName').value.trim(),
+      tagline: $('#storeTagline').value.trim(),
+      address: $('#storeAddress').value.trim(),
+      notice: $('#storeNotice').value.trim(),
+      whatsapp: whatsappDigits.startsWith('55') ? whatsappDigits : `55${whatsappDigits}`,
+      lead_minutes: $('#leadMinutes').value,
+      slot_minutes: $('#slotMinutes').value,
+      max_days_ahead: $('#maxDays').value,
+      min_order_cents: String(minOrder),
+      hours: collectHours(),
     });
     renderSettings();
     showAlert('#settingsOk');
@@ -533,13 +530,9 @@ async function changePassword(event) {
   if (next !== $('#confirmPassword').value) return showAlert('#passwordError', 'As senhas não conferem.');
 
   try {
-    await api('/api/auth/password', {
-      method: 'POST',
-      body: { current_password: current, new_password: next },
-    });
+    await data.changePassword(current, next);
     $('#passwordForm').reset();
     showAlert('#passwordOk');
-    setTimeout(() => location.reload(), 2000);
   } catch (error) {
     showAlert('#passwordError', error.message);
   }

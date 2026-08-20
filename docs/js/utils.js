@@ -48,24 +48,3 @@ export function toast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('is-visible'), 2600);
 }
-
-export async function api(url, options = {}) {
-  const isFormData = options.body instanceof FormData;
-  const response = await fetch(url, {
-    credentials: 'same-origin',
-    ...options,
-    headers: {
-      ...(isFormData || !options.body ? {} : { 'Content-Type': 'application/json' }),
-      ...options.headers,
-    },
-    body: isFormData || typeof options.body === 'string' ? options.body : options.body ? JSON.stringify(options.body) : undefined,
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(payload.error || 'Não foi possível concluir a ação.');
-    error.status = response.status;
-    throw error;
-  }
-  return payload;
-}
