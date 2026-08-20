@@ -4,6 +4,6 @@
   "private": true,
   "description": "Site de pedidos da Esfiharia Jatai: cardapio, agendamento de retirada, envio pelo WhatsApp e painel administrativo. Site estatico no GitHub Pages com dados no Supabase.",
   "scripts": {
-    "dev": "npx --yes serve docs --listen 3000"
+    "dev": "npx --yes serve . --listen 3000"
   }
 }

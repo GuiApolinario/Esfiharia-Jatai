@@ -73,7 +73,7 @@ São três etapas: criar o banco, ligar o site nele e apontar o domínio.
 9. No Supabase, vá em **Project Settings → API Keys** e copie dois valores:
    - **Project URL** — algo como `https://abcdefgh.supabase.co`
    - a chave pública **`anon`** — um texto bem longo
-10. Neste repositório, abra o arquivo **`docs/js/config.js`** e preencha:
+10. Neste repositório, abra o arquivo **`js/config.js`** e preencha:
 
     ```js
     export const SUPABASE_URL = 'https://abcdefgh.supabase.co';
@@ -102,7 +102,7 @@ São três etapas: criar o banco, ligar o site nele e apontar o domínio.
 
 13. No repositório, vá em **Settings → Pages** e configure:
     - **Source:** `Deploy from a branch`
-    - **Branch:** `main` e a pasta **`/docs`**
+    - **Branch:** `main` e a pasta **`/ (root)`**
     - clique em **Save**
 
 14. Ainda em **Settings → Pages**, no campo **Custom domain**, escreva
@@ -202,7 +202,7 @@ npm run dev
 Abre em http://localhost:3000. Sem Node instalado, funciona igual com Python:
 
 ```bash
-python3 -m http.server 3000 --directory docs
+python3 -m http.server 3000
 ```
 
 Não há dependências nem passo de build: editou o arquivo, atualizou a página.
@@ -212,24 +212,26 @@ Não há dependências nem passo de build: editou o arquivo, atualizou a página
 ## Organização dos arquivos
 
 ```
-docs/                  ← é isso que o GitHub Pages publica
-  index.html             site do cliente
-  admin.html             painel do administrador
-  CNAME                  o endereço esfihariajatai.ggsistemas.dev.br
-  css/                   estilos
-  js/
-    config.js            ⚙️ endereço e chave do Supabase (você preenche)
-    supabase.js          conexão com o banco
-    data.js              tudo que lê e grava no banco
-    app.js               cardápio, carrinho e checkout
-    admin.js             painel
-    cart.js              carrinho salvo no navegador
-    schedule.js          cálculo dos horários de retirada
-    utils.js             formatação de dinheiro e telefone
+index.html            site do cliente
+admin.html             painel do administrador
+CNAME                  o endereço esfihariajatai.ggsistemas.dev.br
+css/                   estilos
+js/
+  config.js            ⚙️ endereço e chave do Supabase (você preenche)
+  supabase.js          conexão com o banco
+  data.js              tudo que lê e grava no banco
+  app.js               cardápio, carrinho e checkout
+  admin.js             painel
+  cart.js              carrinho salvo no navegador
+  schedule.js          cálculo dos horários de retirada
+  utils.js             formatação de dinheiro e telefone
 
 supabase/
   schema.sql           script que monta o banco (rodar uma vez)
 ```
+
+Tudo na **raiz do repositório**, no mesmo padrão do renato.ggsistemas.dev.br: o
+GitHub Pages publica direto da branch `main`, sem precisar de uma subpasta.
 
 ---
 
