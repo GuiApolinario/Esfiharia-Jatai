@@ -70,9 +70,12 @@ São três etapas: criar o banco, ligar o site nele e apontar o domínio.
 
 ## Etapa 2 — Ligar o site ao banco
 
-9. No Supabase, vá em **Project Settings → API Keys** e copie dois valores:
-   - **Project URL** — algo como `https://abcdefgh.supabase.co`
-   - a chave pública **`anon`** — um texto bem longo
+9. No Supabase, copie dois valores:
+   - **Project URL** — em **Data API** (ou no botão verde **Connect**).
+     Algo como `https://abcdefgh.supabase.co`
+   - **Publishable key** — em **Project Settings → API Keys**, aba
+     *Publishable and secret API keys*. Começa com `sb_publishable_...`
+     (projetos antigos só têm a aba *Legacy*: use a chave `anon public`)
 10. Neste repositório, abra o arquivo **`js/config.js`** e preencha:
 
     ```js
@@ -87,7 +90,9 @@ São três etapas: criar o banco, ligar o site nele e apontar o domínio.
 > para isso: sozinha ela só deixa **ler** o cardápio. Quem decide o que pode ser
 > alterado são as permissões criadas pelo `schema.sql`.
 >
-> A chave **`service_role`** é secreta e **nunca** deve entrar no repositório.
+> As chaves da seção **Secret keys** (`sb_secret_...`) e a **`service_role`** são
+> secretas e **nunca** devem entrar no repositório. O site tem uma trava que se
+> recusa a funcionar se detectar uma delas em `js/config.js`.
 
 ## Etapa 3 — Publicar no GitHub Pages
 
