@@ -306,6 +306,20 @@ a { color: inherit; }
 
 .item__u { font-size: 11.5px; color: var(--ink-faint); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 
+/* Dica de que dá para personalizar tocando no card. */
+.item__x {
+  align-self: flex-start;
+  font-size: 11px; font-weight: 800;
+  color: var(--accent-deep);
+  background: var(--accent-tint);
+  padding: 2px 7px; border-radius: 999px;
+  margin-top: 2px;
+}
+
+/* Deixa claro que o card responde ao toque. */
+.item { cursor: pointer; }
+.item:has(.item__x):active { transform: scale(.99); }
+
 .item__f {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; margin-top: auto; padding-top: 6px;

@@ -212,6 +212,7 @@ function card(p) {
         <h3 class="item__n">${escapeHtml(p.name)}</h3>
         ${p.description ? `<p class="item__d">${escapeHtml(p.description)}</p>` : ''}
         ${p.unit && p.unit !== 'unidade' ? `<span class="item__u">${escapeHtml(p.unit)}</span>` : ''}
+        ${p.addonGroups.length ? '<span class="item__x">＋ adicionais</span>' : ''}
         <div class="item__f">
           <span class="item__p">
             <span class="item__price money">${money(p.cents)}</span>
@@ -675,13 +676,18 @@ function bind() {
     if (!p) return;
 
     if (e.target.closest('[data-add]')) {
-      if (p.addonGroups.length) return openOptions(p);
+      // Grupo obrigatório precisa de escolha; os opcionais não travam o pedido.
+      if (p.addonGroups.some((g) => g.required)) return openOptions(p);
       cart.add(p);
       toast(`${p.name} adicionada`, 'ok');
       return;
     }
+
     const step = e.target.closest('[data-step]');
-    if (step) cart.bumpProduct(p.id, Number(step.dataset.step));
+    if (step) return cart.bumpProduct(p.id, Number(step.dataset.step));
+
+    // Tocar no card (foto, nome, descrição) abre os adicionais.
+    if (p.addonGroups.length) openOptions(p);
   });
 
   // Carrinho: + / − e upsell
