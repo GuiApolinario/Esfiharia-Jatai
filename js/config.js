@@ -27,5 +27,5 @@
    O site tem uma trava e se recusa a funcionar se detectar uma delas.
    ========================================================================== */
 
-export const SUPABASE_URL = '';
-export const SUPABASE_ANON_KEY = '';
+export const SUPABASE_URL = 'https://ytlyfcjzxuojhlfergch.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_w6Dj1d0pUeoUhl8fUveaAg_7y7kFjtZ';

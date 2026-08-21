@@ -8,7 +8,21 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 const LIBRARY_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/+esm';
 
-const URL_OK = /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i;
+/* A página "Data API" do Supabase mostra a URL já com /rest/v1 no final, mas a
+   biblioteca quer só a base do projeto. Aceitamos as duas formas e limpamos. */
+function normalizaUrl(bruta) {
+  const texto = String(bruta || '').trim();
+  if (!texto) return '';
+  try {
+    const { protocol, hostname } = new URL(texto);
+    if (protocol !== 'https:' || !/^[a-z0-9-]+\.supabase\.co$/i.test(hostname)) return '';
+    return `https://${hostname}`;
+  } catch {
+    return '';
+  }
+}
+
+const URL_LIMPA = normalizaUrl(SUPABASE_URL);
 const CHAVE = SUPABASE_ANON_KEY.trim();
 
 /* TRAVA DE SEGURANÇA
@@ -24,7 +38,7 @@ function atobSeguro(base64) {
 }
 
 /** O site só funciona depois que config.js estiver preenchido. */
-export const isConfigured = URL_OK.test(SUPABASE_URL.trim()) && CHAVE.length > 30 && !ehChaveSecreta;
+export const isConfigured = Boolean(URL_LIMPA) && CHAVE.length > 30 && !ehChaveSecreta;
 
 export const SETUP_MESSAGE = ehChaveSecreta
   ? '⚠️ A chave preenchida em js/config.js é SECRETA e não pode ficar num repositório público. Apague, gere uma nova em Project Settings › API Keys › Secret keys (para invalidar a que vazou) e use a "Publishable key" no lugar.'
@@ -37,7 +51,7 @@ async function connect() {
   if (!isConfigured) return null;
   try {
     const { createClient } = await import(LIBRARY_URL);
-    return createClient(SUPABASE_URL.trim().replace(/\/$/, ''), SUPABASE_ANON_KEY.trim(), {
+    return createClient(URL_LIMPA, CHAVE, {
       auth: { persistSession: true, autoRefreshToken: true },
     });
   } catch (error) {
