@@ -102,6 +102,36 @@ create table if not exists public.admins (
 
 
 -- =============================================================================
+--  1b. MIGRAÇÃO DE BANCO JÁ EXISTENTE
+--
+--  "create table if not exists" acima não mexe em tabela que já existe, então
+--  quem rodou uma versão anterior deste arquivo ficaria sem as colunas novas.
+--  Os comandos abaixo completam o que faltar, SEM apagar nada do que já está lá.
+-- =============================================================================
+
+alter table public.categories   add column if not exists active     boolean not null default true;
+
+alter table public.products     add column if not exists promo_price_cents int;
+alter table public.products     add column if not exists promo_start timestamptz;
+alter table public.products     add column if not exists promo_end   timestamptz;
+alter table public.products     add column if not exists featured    boolean not null default false;
+alter table public.products     add column if not exists unit        text    not null default 'unidade';
+alter table public.products     add column if not exists image       text    not null default '';
+
+do $migra$
+begin
+  -- Garante a regra do preço promocional mesmo em tabela antiga.
+  if not exists (select 1 from pg_constraint where conname = 'products_promo_price_cents_check') then
+    alter table public.products
+      add constraint products_promo_price_cents_check
+      check (promo_price_cents is null or promo_price_cents >= 0);
+  end if;
+
+end;
+$migra$;
+
+
+-- =============================================================================
 --  2. PEDIDOS
 --
 --  Os campos "_snapshot" guardam nome e preço no momento da compra. Se o
@@ -631,6 +661,28 @@ insert into public.settings (key, value) values
               "5":{"open":"18:00","close":"23:30","closed":false},
               "6":{"open":"18:00","close":"23:30","closed":false}}')
 on conflict (key) do nothing;
+
+
+-- Quem vem da versão anterior tinha "tagline" e "notice". Se esses textos
+-- estavam personalizados, leva para as chaves novas — mas só se a nova ainda
+-- estiver com o valor de fábrica, para nunca sobrescrever algo que você editou.
+do $migra_cfg$
+declare
+  v_antigo text;
+begin
+  select value into v_antigo from public.settings where key = 'tagline';
+  if v_antigo is not null and v_antigo <> '' and v_antigo <> 'Esfihas na hora, feitas com massa artesanal' then
+    update public.settings set value = v_antigo
+     where key = 'headline' and value = 'Sua esfiha favorita a poucos toques.';
+  end if;
+
+  select value into v_antigo from public.settings where key = 'notice';
+  if v_antigo is not null and v_antigo <> '' then
+    update public.settings set value = v_antigo   where key = 'announcement' and value = '';
+    update public.settings set value = 'true'     where key = 'announcement_active' and value = 'false';
+  end if;
+end;
+$migra_cfg$;
 
 
 -- =============================================================================
