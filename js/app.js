@@ -8,6 +8,7 @@
 import { $, $$, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js';
 import { fetchCatalog, createOrder } from './data.js';
 import * as cart from './cart.js';
+import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js';
 import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, WEEKDAYS } from './schedule.js';
 
 const state = {
@@ -25,11 +26,50 @@ const state = {
   sending: false,
 };
 
-const FALLBACK_ICON = '🥟';
+/** Desenho usado enquanto o produto não tem foto. */
+function semFoto(p) {
+  const cat = state.categories.find((c) => c.id === p.category_id)?.name || '';
+  return placeholder(cat, p.unit);
+}
+
+/* A tela de carregamento aparece inteira na primeira visita da sessão, para
+   não atrasar quem está só voltando ao cardápio. Nas próximas vezes ela sai
+   assim que os dados chegam. */
+const JA_VIU = (() => {
+  try {
+    const viu = sessionStorage.getItem('esfiharia:splash') === '1';
+    sessionStorage.setItem('esfiharia:splash', '1');
+    return viu;
+  } catch {
+    return false;   // aba anônima: mostra sempre
+  }
+})();
+
+const SPLASH_MIN_MS = JA_VIU ? 0 : 1600;
+const splashInicio = Date.now();
 
 init();
 
+function pintaSplash() {
+  document.body.classList.add('loading');
+  const el = document.getElementById('splash');
+  if (JA_VIU) el?.classList.add('splash--quick');
+  const art = document.getElementById('splashArt');
+  if (art) art.innerHTML = CENA_ESFIHAS;
+}
+
+async function fechaSplash() {
+  const el = document.getElementById('splash');
+  if (!el) return;
+  const falta = SPLASH_MIN_MS - (Date.now() - splashInicio);
+  if (falta > 0) await new Promise((r) => setTimeout(r, falta));
+  el.classList.add('is-out');
+  document.body.classList.remove('loading');
+  setTimeout(() => el.remove(), 500);
+}
+
 async function init() {
+  pintaSplash();
   bind();
   cart.subscribe(onCart);
   try {
@@ -44,7 +84,9 @@ async function init() {
     applyTheme();
     renderStore();
     renderMenu();
+    await fechaSplash();
   } catch (err) {
+    await fechaSplash();
     $('#menu').innerHTML = `
       <div class="empty">
         <div class="empty__ic">😕</div>
@@ -80,7 +122,13 @@ function renderStore() {
   if (s.headline) $('#headline').innerHTML = highlight(s.headline);
   $('#ftAddr').textContent = s.address || 'Consulte no WhatsApp';
 
-  if (s.logo_url) $('#mark').innerHTML = `<img src="${escapeHtml(s.logo_url)}" alt="">`;
+  $('#mark').innerHTML = s.logo_url ? `<img src="${escapeHtml(s.logo_url)}" alt="">` : ESFIHA;
+
+  // Com logotipo enviado, ele substitui o texto na tela de carregamento.
+  const splashLogo = $('#splashLogo');
+  if (s.logo_url && splashLogo) {
+    splashLogo.innerHTML = `<img src="${escapeHtml(s.logo_url)}" alt="${escapeHtml(s.name)}">`;
+  }
 
   const status = $('#status');
   status.textContent = open ? 'Aberto' : 'Fechado';
@@ -179,14 +227,14 @@ function renderMenu() {
   }
 
   $('#cats').innerHTML = groups
-    .map((g) => `<button class="cats__item" data-cat="${g.id}">${g.icon || FALLBACK_ICON} ${escapeHtml(g.name)}</button>`)
+    .map((g) => `<button class="cats__item" data-cat="${g.id}">${g.icon || '🍽️'} ${escapeHtml(g.name)}</button>`)
     .join('');
 
   $('#menu').innerHTML = groups
     .map((g) => `
       <section class="sec" id="sec-${g.id}">
         <div class="sec__h">
-          <h2>${g.icon || FALLBACK_ICON} ${escapeHtml(g.name)}</h2>
+          <h2>${g.icon || '🍽️'} ${escapeHtml(g.name)}</h2>
           <span>${g.products.length}</span>
         </div>
         <div class="list">${g.products.map(card).join('')}</div>
@@ -200,7 +248,7 @@ function renderMenu() {
 function card(p) {
   const media = p.image
     ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async" width="88" height="88">`
-    : `<span aria-hidden="true">${FALLBACK_ICON}</span>`;
+    : semFoto(p);
 
   return `
     <article class="item" data-p="${p.id}">
@@ -387,7 +435,7 @@ function renderCart() {
     <div class="crow" data-k="${escapeHtml(i.key)}">
       <div class="crow__ph">${i.image
         ? `<img src="${escapeHtml(i.image)}" alt="" loading="lazy">`
-        : `<span aria-hidden="true">${FALLBACK_ICON}</span>`}</div>
+        : semFoto(state.products.find((x) => x.id === i.productId) || {})}</div>
       <div>
         <div class="crow__n">${escapeHtml(i.name)}</div>
         <div class="crow__m money">${money(i.unitPriceCents)} cada</div>
@@ -423,7 +471,7 @@ function upsellBlock() {
           <button class="upcard" data-up="${p.id}">
             <span class="upcard__ph">${p.image
               ? `<img src="${escapeHtml(p.image)}" alt="" loading="lazy">`
-              : `<span aria-hidden="true">🥤</span>`}</span>
+              : semFoto(p)}</span>
             <span class="upcard__n">${escapeHtml(p.name)}</span>
             <span class="upcard__p money">${money(p.cents)}</span>
           </button>`).join('')}
