@@ -1,309 +1,351 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Painel do administrador — Esfiharia Jataí</title>
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#2a2018">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/admin.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel — Esfiharia Jataí</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1f1a18">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="stylesheet" href="/css/admin.css">
 </head>
-<body class="admin">
+<body class="adm">
 
-  <!-- ============================================================= login -->
-  <section class="login-screen" id="loginScreen">
-    <div class="login-card">
-      <div class="login-card__mark" aria-hidden="true">🥟</div>
-      <h1>Painel da Esfiharia</h1>
-      <p class="login-card__sub">Entre para gerenciar o cardápio e as configurações.</p>
-
-      <div class="alert alert--error" id="loginError"></div>
-
-      <form id="loginForm">
-        <div class="field">
-          <label for="email">E-mail</label>
-          <input class="input" id="email" name="email" type="email"
-                 autocomplete="username" placeholder="voce@exemplo.com" required autofocus>
-        </div>
-        <div class="field">
-          <label for="password">Senha</label>
-          <input class="input" id="password" name="password" type="password"
-                 autocomplete="current-password" placeholder="••••••••" required>
-        </div>
-        <button class="btn btn--primary btn--block btn--lg" type="submit" id="loginBtn">Entrar</button>
-      </form>
-
-      <a class="login-back" href="index.html">← Voltar para o site</a>
-    </div>
-  </section>
-
-  <!-- ============================================================= painel -->
-  <div class="admin-shell" id="adminShell">
-    <header class="admin-top">
-      <div class="admin-top__brand"><span aria-hidden="true">🥟</span> <span>Esfiharia Jataí</span></div>
-      <span class="admin-top__user" id="adminUser"></span>
-      <a class="btn btn--outline-light" href="index.html" target="_blank" rel="noopener">Ver o site ↗</a>
-      <button class="btn btn--outline-light" id="logoutBtn">Sair</button>
-    </header>
-
-    <nav class="tabs">
-      <button class="tab is-active" data-tab="produtos">🥟 Produtos</button>
-      <button class="tab" data-tab="categorias">🗂️ Categorias</button>
-      <button class="tab" data-tab="loja">🏪 Loja e horários</button>
-      <button class="tab" data-tab="conta">🔒 Minha conta</button>
-    </nav>
-
-    <main class="admin-main">
-
-      <!-- ------------------------------------------------------ produtos -->
-      <section class="panel is-active" data-panel="produtos">
-        <div class="panel__head">
-          <h2>Produtos</h2>
-          <button class="btn btn--primary" id="newProductBtn">+ Novo produto</button>
-          <p>Cadastre esfihas e bebidas com foto, descrição e preço. Desligue o botão de disponível para esconder um item do cardápio sem apagá-lo.</p>
-        </div>
-
-        <div class="toolbar">
-          <input class="input" id="productSearch" type="search" placeholder="Buscar produto…">
-          <select class="select" id="productFilter"><option value="">Todas as categorias</option></select>
-        </div>
-
-        <div class="list" id="productList"></div>
-      </section>
-
-      <!-- ---------------------------------------------------- categorias -->
-      <section class="panel" data-panel="categorias">
-        <div class="panel__head">
-          <h2>Categorias</h2>
-          <button class="btn btn--primary" id="newCategoryBtn">+ Nova categoria</button>
-          <p>As categorias organizam o cardápio, por exemplo Esfihas Salgadas, Esfihas Doces e Bebidas.</p>
-        </div>
-        <div class="list" id="categoryList"></div>
-      </section>
-
-      <!-- ---------------------------------------------------------- loja -->
-      <section class="panel" data-panel="loja">
-        <div class="panel__head">
-          <h2>Loja e horários</h2>
-          <p>Dados que aparecem no site e regras do agendamento de retirada.</p>
-        </div>
-
-        <div class="alert alert--success" id="settingsOk">Configurações salvas.</div>
-        <div class="alert alert--error" id="settingsError"></div>
-
-        <form id="settingsForm">
-          <div class="card-block">
-            <h3>Dados da esfiharia</h3>
-            <p class="card-block__sub">Nome, frase de apresentação e contato exibidos no site.</p>
-            <div class="form-grid form-grid--2">
-              <div class="field">
-                <label for="storeName">Nome da esfiharia</label>
-                <input class="input" id="storeName" name="store_name" type="text" required>
-              </div>
-              <div class="field">
-                <label for="storeWhats">WhatsApp que recebe os pedidos</label>
-                <input class="input" id="storeWhats" name="whatsapp" type="tel" placeholder="(15) 99736-5401" required>
-              </div>
-              <div class="field">
-                <label for="storeAddress">Endereço para retirada</label>
-                <input class="input" id="storeAddress" name="address" type="text" placeholder="Rua, número, bairro">
-              </div>
-              <div class="field">
-                <label for="storeTagline">Frase de apresentação</label>
-                <input class="input" id="storeTagline" name="tagline" type="text">
-              </div>
-            </div>
-            <div class="field" style="margin-top:1rem">
-              <label for="storeNotice">Aviso no topo do cardápio <span class="field__hint">(deixe vazio para não exibir)</span></label>
-              <input class="input" id="storeNotice" name="notice" type="text" placeholder="Ex.: Hoje temos esfiha de costela!">
-            </div>
-          </div>
-
-          <div class="card-block">
-            <h3>Horário de funcionamento</h3>
-            <p class="card-block__sub">Só aparecem para o cliente horários dentro da janela de cada dia.</p>
-            <div class="hours-grid" id="hoursGrid"></div>
-          </div>
-
-          <div class="card-block">
-            <h3>Regras da retirada</h3>
-            <p class="card-block__sub">Controlam os horários oferecidos no agendamento.</p>
-            <div class="form-grid form-grid--2">
-              <div class="field">
-                <label for="leadMinutes">Tempo mínimo de preparo <span class="field__hint">(minutos)</span></label>
-                <input class="input" id="leadMinutes" name="lead_minutes" type="number" min="0" max="480" step="5" required>
-              </div>
-              <div class="field">
-                <label for="slotMinutes">Intervalo entre horários <span class="field__hint">(minutos)</span></label>
-                <input class="input" id="slotMinutes" name="slot_minutes" type="number" min="5" max="120" step="5" required>
-              </div>
-              <div class="field">
-                <label for="maxDays">Agendar com até <span class="field__hint">(dias de antecedência)</span></label>
-                <input class="input" id="maxDays" name="max_days_ahead" type="number" min="0" max="30" step="1" required>
-              </div>
-              <div class="field">
-                <label for="minOrder">Pedido mínimo <span class="field__hint">(0 = sem mínimo)</span></label>
-                <input class="input" id="minOrder" name="min_order" type="text" placeholder="0,00">
-              </div>
-            </div>
-          </div>
-
-          <div class="sticky-save">
-            <p>As alterações valem para o site assim que você salvar.</p>
-            <button class="btn btn--primary" type="submit" id="saveSettingsBtn">Salvar configurações</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- --------------------------------------------------------- conta -->
-      <section class="panel" data-panel="conta">
-        <div class="panel__head">
-          <h2>Minha conta</h2>
-          <p>Troque a senha de acesso ao painel.</p>
-        </div>
-
-        <div class="card-block" style="max-width:520px">
-          <h3>Alterar senha</h3>
-          <p class="card-block__sub">Use a senha nova no próximo acesso ao painel.</p>
-
-          <div class="alert alert--error" id="passwordError"></div>
-          <div class="alert alert--success" id="passwordOk">Senha alterada com sucesso.</div>
-
-          <form id="passwordForm">
-            <div class="field">
-              <label for="currentPassword">Senha atual</label>
-              <input class="input" id="currentPassword" type="password" autocomplete="current-password" required>
-            </div>
-            <div class="field">
-              <label for="newPassword">Nova senha <span class="field__hint">(mínimo 6 caracteres)</span></label>
-              <input class="input" id="newPassword" type="password" autocomplete="new-password" minlength="6" required>
-            </div>
-            <div class="field">
-              <label for="confirmPassword">Repita a nova senha</label>
-              <input class="input" id="confirmPassword" type="password" autocomplete="new-password" minlength="6" required>
-            </div>
-            <button class="btn btn--primary" type="submit">Alterar senha</button>
-          </form>
-        </div>
-      </section>
-
-    </main>
-  </div>
-
-  <!-- ================================================== modal de produto -->
-  <div class="modal" id="productModal" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
-    <div class="modal__backdrop" data-close="product"></div>
-    <div class="modal__panel">
-      <div class="modal__head">
-        <h2 id="productModalTitle">Novo produto</h2>
-        <button class="icon-btn" data-close="product" aria-label="Fechar">✕</button>
+<section class="login" id="login">
+  <div class="login__card">
+    <div class="login__mark" aria-hidden="true">🥟</div>
+    <h1>Painel da Esfiharia</h1>
+    <p class="login__sub">Entre para gerenciar o cardápio e os pedidos.</p>
+    <div class="alert alert--bad" id="loginErr"></div>
+    <form id="loginForm">
+      <div class="f">
+        <label for="email">E-mail</label>
+        <input class="in" id="email" type="email" autocomplete="username" placeholder="voce@exemplo.com" required autofocus>
       </div>
+      <div class="f">
+        <label for="pass">Senha</label>
+        <input class="in" id="pass" type="password" autocomplete="current-password" placeholder="••••••••" required>
+      </div>
+      <button class="btn btn--brand btn--block btn--lg" type="submit" id="loginBtn">Entrar</button>
+    </form>
+    <a class="login__back" href="/index.html">← Voltar para o site</a>
+  </div>
+</section>
 
-      <form class="modal__body" id="productForm">
-        <div class="alert alert--error" id="productError"></div>
+<div class="shell" id="shell">
+  <header class="top">
+    <span class="top__n"><span aria-hidden="true">🥟</span> Esfiharia Jataí</span>
+    <span class="top__u" id="who"></span>
+    <a class="btn btn--line" href="/index.html" target="_blank" rel="noopener">Ver site ↗</a>
+    <button class="btn btn--line" id="logout">Sair</button>
+  </header>
 
-        <div class="field">
-          <span class="field__label">Foto do produto</span>
-          <div class="uploader">
-            <div class="uploader__preview" id="imagePreview" aria-hidden="true">📷</div>
+  <nav class="nav" id="nav">
+    <button class="nav__b is-on" data-p="home"><span aria-hidden="true">📊</span><span>Início</span></button>
+    <button class="nav__b" data-p="pedidos"><span aria-hidden="true">🧾</span><span>Pedidos</span></button>
+    <button class="nav__b" data-p="produtos"><span aria-hidden="true">🥟</span><span>Produtos</span></button>
+    <button class="nav__b" data-p="cats"><span aria-hidden="true">🗂️</span><span>Categorias</span></button>
+    <button class="nav__b" data-p="addons"><span aria-hidden="true">➕</span><span>Adicionais</span></button>
+    <button class="nav__b" data-p="loja"><span aria-hidden="true">🏪</span><span>Loja</span></button>
+    <button class="nav__b" data-p="visual"><span aria-hidden="true">🎨</span><span>Aparência</span></button>
+    <button class="nav__b" data-p="conta"><span aria-hidden="true">🔒</span><span>Conta</span></button>
+  </nav>
+
+  <main class="main">
+
+    <!-- ------------------------------------------------------- início -->
+    <section class="pane is-on" data-pane="home">
+      <div class="pane__h"><h2>Hoje</h2></div>
+      <div class="stats" id="stats"></div>
+      <div class="pane__h"><h2 style="font-size:17px">Pedidos recentes</h2></div>
+      <div class="rows" id="recent"></div>
+    </section>
+
+    <!-- ------------------------------------------------------ pedidos -->
+    <section class="pane" data-pane="pedidos">
+      <div class="pane__h">
+        <h2>Pedidos</h2>
+        <p>Busque pelo código que o cliente mandou no WhatsApp para conferir o valor real.</p>
+      </div>
+      <div class="bar">
+        <input class="in" id="oSearch" type="search" placeholder="Código, nome ou telefone…">
+        <select class="in" id="oStatus" style="flex:0 1 160px">
+          <option value="">Todos</option>
+          <option value="novo">Novo</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="preparando">Preparando</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div id="verified"></div>
+      <div class="rows" id="orders"></div>
+    </section>
+
+    <!-- ----------------------------------------------------- produtos -->
+    <section class="pane" data-pane="produtos">
+      <div class="pane__h">
+        <h2>Produtos</h2>
+        <button class="btn btn--brand" id="newProduct">+ Novo</button>
+        <p>Desligue o botão verde para esconder um item do cardápio sem apagá-lo.</p>
+      </div>
+      <div class="bar">
+        <input class="in" id="pSearch" type="search" placeholder="Buscar produto…">
+        <select class="in" id="pFilter" style="flex:0 1 170px"><option value="">Todas as categorias</option></select>
+      </div>
+      <div class="rows" id="products"></div>
+    </section>
+
+    <!-- --------------------------------------------------- categorias -->
+    <section class="pane" data-pane="cats">
+      <div class="pane__h">
+        <h2>Categorias</h2>
+        <button class="btn btn--brand" id="newCat">+ Nova</button>
+        <p>Organizam o cardápio. A ordem aqui é a ordem que o cliente vê.</p>
+      </div>
+      <div class="rows" id="cats"></div>
+    </section>
+
+    <!-- --------------------------------------------------- adicionais -->
+    <section class="pane" data-pane="addons">
+      <div class="pane__h">
+        <h2>Adicionais</h2>
+        <button class="btn btn--brand" id="newGroup">+ Novo grupo</button>
+        <p>Crie grupos como “Adicione um extra” e vincule aos produtos na tela de edição.</p>
+      </div>
+      <div class="rows" id="groups"></div>
+    </section>
+
+    <!-- --------------------------------------------------------- loja -->
+    <section class="pane" data-pane="loja">
+      <div class="pane__h"><h2>Loja e horários</h2></div>
+      <div class="alert alert--ok" id="setOk">Configurações salvas.</div>
+      <div class="alert alert--bad" id="setErr"></div>
+
+      <form id="setForm">
+        <div class="block">
+          <h3>Aceitar pedidos</h3>
+          <p class="block__s">Desligue quando não puder atender. O site avisa o cliente e oferece o WhatsApp.</p>
+          <label class="sw"><input type="checkbox" id="accepting"><span class="sw__t"></span><span id="acceptingL">Aceitando pedidos</span></label>
+          <div class="f" style="margin-top:12px">
+            <label for="closedMsg">Mensagem quando estiver fechado</label>
+            <input class="in" id="closedMsg" type="text" placeholder="Voltamos amanhã às 18h.">
+          </div>
+        </div>
+
+        <div class="block">
+          <h3>Aviso no cardápio</h3>
+          <p class="block__s">Aparece em destaque no topo do site.</p>
+          <label class="sw"><input type="checkbox" id="annOn"><span class="sw__t"></span><span>Mostrar aviso</span></label>
+          <div class="f" style="margin-top:12px">
+            <label for="ann">Texto do aviso</label>
+            <input class="in" id="ann" type="text" placeholder="🔥 Hoje temos esfiha especial de costela!">
+          </div>
+        </div>
+
+        <div class="block">
+          <h3>Informações</h3>
+          <div class="grid2">
+            <div class="f"><label for="sName">Nome da loja</label><input class="in" id="sName" type="text" required></div>
+            <div class="f"><label for="sWhats">WhatsApp dos pedidos</label><input class="in" id="sWhats" type="tel" placeholder="(15) 99736-5401" required></div>
+            <div class="f span2"><label for="sHead">Frase principal</label><input class="in" id="sHead" type="text"></div>
+            <div class="f span2"><label for="sAddr">Endereço da retirada</label><input class="in" id="sAddr" type="text"></div>
+            <div class="f"><label for="sInsta">Instagram <span class="f__hint">(sem @)</span></label><input class="in" id="sInsta" type="text" placeholder="esfihariajatai"></div>
+            <div class="f"><label for="sPrep">Prazo de preparo <span class="f__hint">(deixe vazio se não quiser prometer)</span></label><input class="in" id="sPrep" type="text" placeholder="Ex.: cerca de 30 min"></div>
+          </div>
+        </div>
+
+        <div class="block">
+          <h3>Horário de funcionamento</h3>
+          <p class="block__s">Só aparecem horários dentro da janela de cada dia.</p>
+          <div id="hours"></div>
+        </div>
+
+        <div class="block">
+          <h3>Regras da retirada</h3>
+          <div class="grid2">
+            <div class="f"><label for="lead">Preparo mínimo <span class="f__hint">(min)</span></label><input class="in" id="lead" type="number" min="0" max="480" step="5" required></div>
+            <div class="f"><label for="slot">Intervalo entre horários <span class="f__hint">(min)</span></label><input class="in" id="slot" type="number" min="5" max="120" step="5" required></div>
+            <div class="f"><label for="days">Antecedência <span class="f__hint">(dias)</span></label><input class="in" id="days" type="number" min="0" max="30" required></div>
+            <div class="f"><label for="minOrder">Pedido mínimo <span class="f__hint">(0 = sem)</span></label><input class="in" id="minOrder" type="text" inputmode="decimal" placeholder="0,00"></div>
+          </div>
+        </div>
+
+        <div class="save">
+          <p>As mudanças valem no site assim que você salvar.</p>
+          <button class="btn btn--brand" type="submit" id="setBtn">Salvar</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ---------------------------------------------------- aparência -->
+    <section class="pane" data-pane="visual">
+      <div class="pane__h"><h2>Aparência</h2><p>Cores e logotipo do site. O contraste é conferido automaticamente.</p></div>
+      <div class="alert alert--ok" id="visOk">Aparência salva.</div>
+      <div class="alert alert--bad" id="visErr"></div>
+
+      <form id="visForm">
+        <div class="block">
+          <h3>Cores</h3>
+          <p class="block__s">O padrão é vermelho com dourado. Cores muito claras no lugar do vermelho são recusadas para não sumir o texto branco.</p>
+          <div class="swatches">
+            <label class="swatch"><input type="color" id="cPrimary"><span>Principal</span></label>
+            <label class="swatch"><input type="color" id="cAccent"><span>Destaque</span></label>
+          </div>
+          <button class="mini" type="button" id="resetColors" style="margin-top:12px">Voltar ao padrão</button>
+        </div>
+
+        <div class="block">
+          <h3>Logotipo</h3>
+          <p class="block__s">Aparece no topo do site. Quadrado funciona melhor.</p>
+          <div class="up">
+            <div class="up__p" id="logoPrev" aria-hidden="true">🥟</div>
             <div>
-              <div class="uploader__actions">
-                <button class="mini-btn" type="button" id="pickImageBtn">Escolher foto</button>
-                <button class="mini-btn mini-btn--danger" type="button" id="removeImageBtn" hidden>Remover foto</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="mini" type="button" id="logoPick">Escolher</button>
+                <button class="mini mini--bad" type="button" id="logoDel" hidden>Remover</button>
               </div>
-              <p class="uploader__hint">JPG, PNG ou WEBP até 5 MB. A imagem é reduzida automaticamente para carregar rápido.</p>
-              <input type="file" id="imageInput" accept="image/*" hidden>
+              <p class="up__h">JPG, PNG ou WEBP até 5 MB.</p>
+              <input type="file" id="logoFile" accept="image/*" hidden>
             </div>
           </div>
         </div>
 
-        <div class="field">
-          <label for="productName">Nome</label>
-          <input class="input" id="productName" type="text" placeholder="Ex.: Esfiha de Carne" required>
-        </div>
-
-        <div class="field">
-          <label for="productDescription">Descrição <span class="field__hint">(ingredientes, especificações)</span></label>
-          <textarea class="textarea" id="productDescription"
-                    placeholder="Ex.: Carne bovina moída temperada com cebola, tomate e limão."></textarea>
-        </div>
-
-        <div class="form-grid form-grid--2">
-          <div class="field">
-            <label for="productPrice">Preço (R$)</label>
-            <input class="input" id="productPrice" type="text" inputmode="decimal" placeholder="8,00" required>
-          </div>
-          <div class="field">
-            <label for="productCategory">Categoria</label>
-            <select class="select" id="productCategory"></select>
-          </div>
-          <div class="field">
-            <label for="productUnit">Unidade de venda</label>
-            <input class="input" id="productUnit" type="text" placeholder="unidade, lata 350ml, dúzia…">
-          </div>
-          <div class="field">
-            <label for="productOrder">Ordem no cardápio</label>
-            <input class="input" id="productOrder" type="number" step="1" placeholder="1">
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="switch">
-            <input type="checkbox" id="productAvailable" checked>
-            <span class="switch__track"></span>
-            <span>Disponível no cardápio</span>
-          </label>
+        <div class="save">
+          <p>Pré-visualize abrindo o site em outra aba.</p>
+          <button class="btn btn--brand" type="submit">Salvar aparência</button>
         </div>
       </form>
+    </section>
 
-      <div class="modal__foot" style="display:flex; gap:.7rem">
-        <button class="btn btn--ghost" type="button" data-close="product">Cancelar</button>
-        <button class="btn btn--primary" type="submit" form="productForm" id="saveProductBtn" style="flex:1">Salvar produto</button>
+    <!-- -------------------------------------------------------- conta -->
+    <section class="pane" data-pane="conta">
+      <div class="pane__h"><h2>Minha conta</h2></div>
+      <div class="block" style="max-width:480px">
+        <h3>Alterar senha</h3>
+        <p class="block__s">Use a senha nova no próximo acesso.</p>
+        <div class="alert alert--bad" id="pwErr"></div>
+        <div class="alert alert--ok" id="pwOk">Senha alterada com sucesso.</div>
+        <form id="pwForm">
+          <div class="f"><label for="pwCur">Senha atual</label><input class="in" id="pwCur" type="password" autocomplete="current-password" required></div>
+          <div class="f"><label for="pwNew">Nova senha <span class="f__hint">(mín. 6)</span></label><input class="in" id="pwNew" type="password" autocomplete="new-password" minlength="6" required></div>
+          <div class="f"><label for="pwRep">Repita a nova senha</label><input class="in" id="pwRep" type="password" autocomplete="new-password" minlength="6" required></div>
+          <button class="btn btn--brand" type="submit">Alterar senha</button>
+        </form>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- =============================================== modal de categoria -->
-  <div class="modal" id="categoryModal" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
-    <div class="modal__backdrop" data-close="category"></div>
-    <div class="modal__panel" style="max-height:none">
-      <div class="modal__head">
-        <h2 id="categoryModalTitle">Nova categoria</h2>
-        <button class="icon-btn" data-close="category" aria-label="Fechar">✕</button>
-      </div>
+  </main>
+</div>
 
-      <form class="modal__body" id="categoryForm">
-        <div class="alert alert--error" id="categoryError"></div>
-        <div class="form-grid form-grid--2">
-          <div class="field">
-            <label for="categoryName">Nome</label>
-            <input class="input" id="categoryName" type="text" placeholder="Ex.: Esfihas Doces" required>
+<div class="scrim" id="scrim"></div>
+
+<!-- ===================== folha: produto ===================== -->
+<section class="sheet" id="pSheet" role="dialog" aria-modal="true" aria-labelledby="pTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h"><h2 id="pTitle">Novo produto</h2><button class="iconbtn" data-close aria-label="Fechar">✕</button></div>
+  <form class="sheet__b" id="pForm">
+    <div class="alert alert--bad" id="pErr"></div>
+    <div class="f">
+      <span class="f__l">Foto</span>
+      <div class="up">
+        <div class="up__p" id="pPrev" aria-hidden="true">📷</div>
+        <div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="mini" type="button" id="pPick">Escolher foto</button>
+            <button class="mini mini--bad" type="button" id="pDel" hidden>Remover</button>
           </div>
-          <div class="field">
-            <label for="categoryIcon">Ícone <span class="field__hint">(um emoji)</span></label>
-            <input class="input" id="categoryIcon" type="text" maxlength="4" placeholder="🍫">
-          </div>
-          <div class="field">
-            <label for="categoryOrder">Ordem no cardápio</label>
-            <input class="input" id="categoryOrder" type="number" step="1" placeholder="1">
-          </div>
+          <p class="up__h">A imagem é reduzida automaticamente antes de subir.</p>
+          <input type="file" id="pFile" accept="image/*" hidden>
         </div>
-      </form>
-
-      <div class="modal__foot" style="display:flex; gap:.7rem">
-        <button class="btn btn--ghost" type="button" data-close="category">Cancelar</button>
-        <button class="btn btn--primary" type="submit" form="categoryForm" style="flex:1">Salvar categoria</button>
       </div>
     </div>
+    <div class="f"><label for="pName">Nome</label><input class="in" id="pName" type="text" required maxlength="90"></div>
+    <div class="f"><label for="pDesc">Descrição</label><textarea class="in" id="pDesc" maxlength="220"></textarea></div>
+    <div class="grid2">
+      <div class="f"><label for="pPrice">Preço (R$)</label><input class="in" id="pPrice" type="text" inputmode="decimal" placeholder="8,00" required></div>
+      <div class="f"><label for="pPromo">Preço promocional <span class="f__hint">(opcional)</span></label><input class="in" id="pPromo" type="text" inputmode="decimal" placeholder="—"></div>
+      <div class="f"><label for="pCat">Categoria</label><select class="in" id="pCat"></select></div>
+      <div class="f"><label for="pUnit">Unidade</label><input class="in" id="pUnit" type="text" placeholder="unidade, lata 350ml…"></div>
+      <div class="f"><label for="pStart">Promoção começa</label><input class="in" id="pStart" type="date"></div>
+      <div class="f"><label for="pEnd">Promoção termina</label><input class="in" id="pEnd" type="date"></div>
+      <div class="f"><label for="pOrder">Ordem</label><input class="in" id="pOrder" type="number" step="1"></div>
+    </div>
+    <div class="f" style="margin-top:12px">
+      <span class="f__l">Adicionais oferecidos</span>
+      <div id="pGroups"></div>
+    </div>
+    <div class="f" style="display:flex;gap:18px;flex-wrap:wrap">
+      <label class="sw"><input type="checkbox" id="pAvail" checked><span class="sw__t"></span><span>Disponível</span></label>
+      <label class="sw"><input type="checkbox" id="pFeat"><span class="sw__t"></span><span>Mais pedido</span></label>
+    </div>
+  </form>
+  <div class="sheet__f" style="display:flex;gap:8px">
+    <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
+    <button class="btn btn--brand" type="submit" form="pForm" id="pSave" style="flex:1">Salvar</button>
   </div>
+</section>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- ===================== folha: categoria ===================== -->
+<section class="sheet" id="cSheet" role="dialog" aria-modal="true" aria-labelledby="cTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h"><h2 id="cTitle">Nova categoria</h2><button class="iconbtn" data-close aria-label="Fechar">✕</button></div>
+  <form class="sheet__b" id="cForm">
+    <div class="alert alert--bad" id="cErr"></div>
+    <div class="grid2">
+      <div class="f"><label for="cName">Nome</label><input class="in" id="cName" type="text" required></div>
+      <div class="f"><label for="cIcon">Ícone <span class="f__hint">(emoji)</span></label><input class="in" id="cIcon" type="text" maxlength="4"></div>
+      <div class="f"><label for="cOrder">Ordem</label><input class="in" id="cOrder" type="number" step="1"></div>
+    </div>
+    <div class="f"><label class="sw"><input type="checkbox" id="cActive" checked><span class="sw__t"></span><span>Ativa</span></label></div>
+  </form>
+  <div class="sheet__f" style="display:flex;gap:8px">
+    <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
+    <button class="btn btn--brand" type="submit" form="cForm" style="flex:1">Salvar</button>
+  </div>
+</section>
 
-  <script type="module" src="/js/admin.js"></script>
+<!-- ===================== folha: grupo de adicionais ===================== -->
+<section class="sheet" id="gSheet" role="dialog" aria-modal="true" aria-labelledby="gTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h"><h2 id="gTitle">Grupo de adicionais</h2><button class="iconbtn" data-close aria-label="Fechar">✕</button></div>
+  <form class="sheet__b" id="gForm">
+    <div class="alert alert--bad" id="gErr"></div>
+    <div class="f"><label for="gName">Nome do grupo</label><input class="in" id="gName" type="text" placeholder="Adicione um extra" required></div>
+    <div class="grid2">
+      <div class="f"><label for="gMin">Mínimo de escolhas</label><input class="in" id="gMin" type="number" min="0" max="10" value="0"></div>
+      <div class="f"><label for="gMax">Máximo de escolhas</label><input class="in" id="gMax" type="number" min="1" max="10" value="1"></div>
+    </div>
+    <div class="f" style="display:flex;gap:18px;flex-wrap:wrap">
+      <label class="sw"><input type="checkbox" id="gReq"><span class="sw__t"></span><span>Obrigatório</span></label>
+      <label class="sw"><input type="checkbox" id="gActive" checked><span class="sw__t"></span><span>Ativo</span></label>
+    </div>
+    <div class="f">
+      <span class="f__l">Itens do grupo</span>
+      <div id="gItems"></div>
+      <button class="mini" type="button" id="gAddItem" style="margin-top:8px">+ Adicionar item</button>
+    </div>
+  </form>
+  <div class="sheet__f" style="display:flex;gap:8px">
+    <button class="btn btn--ghost" type="button" data-close>Cancelar</button>
+    <button class="btn btn--brand" type="submit" form="gForm" style="flex:1">Salvar grupo</button>
+  </div>
+</section>
+
+<!-- ===================== folha: detalhe do pedido ===================== -->
+<section class="sheet" id="oSheet" role="dialog" aria-modal="true" aria-labelledby="oTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h"><h2 id="oTitle">Pedido</h2><button class="iconbtn" data-close aria-label="Fechar">✕</button></div>
+  <div class="sheet__b" id="oBody"></div>
+  <div class="sheet__f" id="oFoot"></div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="/js/admin.js"></script>
 </body>
 </html>

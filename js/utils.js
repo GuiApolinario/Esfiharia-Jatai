@@ -38,13 +38,49 @@ export const escapeHtml = (value) =>
 export const $ = (selector, scope = document) => scope.querySelector(selector);
 export const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 
-/** Toast discreto no rodapé da tela. */
+/** Aviso discreto no rodapé da tela. tipo: '' | 'ok' | 'bad' */
 let toastTimer;
-export function toast(message) {
+export function toast(message, tipo = '') {
   const el = document.getElementById('toast');
   if (!el) return;
   el.textContent = message;
-  el.classList.add('is-visible');
+  el.className = `toast is-on${tipo ? ` toast--${tipo}` : ''}`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('is-visible'), 2600);
+  toastTimer = setTimeout(() => el.classList.remove('is-on'), 2800);
+}
+
+/** Reduz a foto no navegador antes de enviar, para o site carregar rápido. */
+export function shrinkImage(file, maxSize = 1000, quality = 0.82) {
+  return new Promise((resolve) => {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return resolve(file);
+
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+      if (scale === 1 && file.size < 400_000) return resolve(file);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(image.width * scale);
+      canvas.height = Math.round(image.height * scale);
+      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], 'foto.jpg', { type: 'image/jpeg' }) : file),
+        'image/jpeg', quality);
+    };
+
+    image.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    image.src = url;
+  });
+}
+
+/** 20/08/2026 20:45 */
+export function dateTimeBR(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
 }

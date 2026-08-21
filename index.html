@@ -1,205 +1,203 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Esfiharia Jataí — Peça sua esfiha e retire no local</title>
-  <meta name="description" content="Esfihas salgadas, doces e bebidas geladas. Monte seu pedido, escolha o horário e retire quentinho na Esfiharia Jataí.">
-  <meta name="theme-color" content="#b7302a">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥟</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Esfiharia Jataí | Peça pelo WhatsApp</title>
+<meta name="description" content="Escolha suas esfihas, bebidas e acompanhamentos, monte seu pedido e envie pelo WhatsApp. Retirada no local.">
+<meta name="theme-color" content="#c8102e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥟</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Esfiharia Jataí | Peça pelo WhatsApp">
+<meta property="og:description" content="Monte seu pedido de esfihas e envie pelo WhatsApp. Retirada no local.">
+<meta property="og:locale" content="pt_BR">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
 
-  <!-- ============================================================ header -->
-  <header class="header">
-    <div class="wrap header__inner">
-      <a class="brand" href="index.html">
-        <span class="brand__mark" aria-hidden="true">🥟</span>
-        <span>
-          <span class="brand__name" id="brandName">Esfiharia Jataí</span>
-          <span class="brand__sub">Retirada no local</span>
-        </span>
-      </a>
+<header class="hdr">
+  <div class="hdr__in">
+    <span class="hdr__mark" id="mark" aria-hidden="true">🥟</span>
+    <span class="hdr__name" id="storeName">Esfiharia Jataí</span>
+    <span class="pill pill--closed" id="status">…</span>
+  </div>
+</header>
 
-      <span class="status status--closed" id="storeStatus">Carregando</span>
+<div id="noticeSlot"></div>
 
-      <button class="cart-btn" id="cartToggle" aria-label="Abrir carrinho">
-        <span aria-hidden="true">🛒</span>
-        <span class="cart-btn__label">Meu pedido</span>
-        <span class="cart-btn__count" id="cartCount">0</span>
-      </button>
+<section class="hero">
+  <div class="wrap">
+    <h1 id="headline">Sua esfiha favorita <em>a poucos toques.</em></h1>
+    <p class="hero__sub" id="sub">Monte o pedido, escolha o horário e retire quentinho.</p>
+    <div class="hero__meta">
+      <span class="tagx">🛍️ Retirada no local</span>
+      <span class="tagx" id="hoursTag">—</span>
     </div>
-  </header>
-
-  <!-- ============================================================== hero -->
-  <section class="hero">
-    <div class="wrap hero__inner">
-      <div>
-        <span class="hero__badge">🛍️ Somente retirada no local</span>
-        <h1 class="hero__title">Esfiha quentinha,<br><em>na hora que você marcar.</em></h1>
-        <p class="hero__text" id="heroTagline">
-          Monte seu pedido, escolha o horário da retirada e a gente prepara tudo para você buscar sem fila.
-        </p>
-
-        <div class="hero__actions">
-          <a class="btn btn--primary btn--lg" href="#cardapio">Ver cardápio</a>
-          <a class="btn btn--ghost btn--lg" href="#como-funciona">Como funciona</a>
-        </div>
-
-        <div class="hero__facts">
-          <div class="fact">
-            <div class="fact__label">Endereço</div>
-            <div class="fact__value" id="factAddress">—</div>
-          </div>
-          <div class="fact">
-            <div class="fact__label">Hoje</div>
-            <div class="fact__value" id="factHours">—</div>
-          </div>
-          <div class="fact">
-            <div class="fact__label">Pedidos pelo</div>
-            <div class="fact__value" id="factPhone">WhatsApp</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="hero__card" id="como-funciona">
-        <h3>Como funciona</h3>
-        <ol class="steps">
-          <li><span><strong>Escolha suas esfihas</strong> Salgadas, doces e bebidas geladas no cardápio.</span></li>
-          <li><span><strong>Marque o horário</strong> Você define o dia e a hora da retirada.</span></li>
-          <li><span><strong>Envie pelo WhatsApp</strong> O pedido chega prontinho para a gente confirmar.</span></li>
-          <li><span><strong>Retire no balcão</strong> Pague na hora ou pelo Pix combinado no WhatsApp.</span></li>
-        </ol>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========================================================== cardápio -->
-  <main class="menu wrap" id="cardapio">
-    <div id="noticeSlot"></div>
-
-    <div class="section-head">
-      <h2>Nosso cardápio</h2>
-      <p>Toque em <strong>Adicionar</strong> e escolha a quantidade de cada sabor.</p>
-    </div>
-
-    <nav class="catnav" id="catnav" aria-label="Categorias do cardápio"></nav>
-
-    <div id="menuRoot">
-      <div class="grid">
-        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
-      </div>
-    </div>
-  </main>
-
-  <!-- ============================================================ rodapé -->
-  <footer class="footer">
-    <div class="wrap footer__grid">
-      <div>
-        <h4 id="footerName">Esfiharia Jataí</h4>
-        <p id="footerTagline">Esfihas artesanais feitas na hora.</p>
-        <p style="margin-top:.9rem">📍 <span id="footerAddress">—</span></p>
-        <p>💬 <a id="footerWhats" href="#" target="_blank" rel="noopener">Falar no WhatsApp</a></p>
-      </div>
-      <div>
-        <h4>Horários</h4>
-        <ul id="footerHours"></ul>
-      </div>
-      <div>
-        <h4>Importante</h4>
-        <p>Trabalhamos <strong>somente com retirada no local</strong>. Não fazemos entrega.</p>
-        <p>O pagamento é combinado pelo WhatsApp ou feito na retirada.</p>
-      </div>
-    </div>
-    <div class="wrap footer__bottom">
-      <span>© <span id="year">2026</span> <span id="footerName2">Esfiharia Jataí</span></span>
-      <a href="admin.html">Área do administrador</a>
-    </div>
-  </footer>
-
-  <!-- ========================================================== carrinho -->
-  <div class="overlay" id="overlay"></div>
-
-  <aside class="drawer" id="cartDrawer" aria-label="Meu pedido" aria-hidden="true">
-    <div class="drawer__head">
-      <h2>Meu pedido</h2>
-      <button class="icon-btn" id="clearCart" title="Esvaziar pedido" aria-label="Esvaziar pedido">🗑️</button>
-      <button class="icon-btn" id="closeCart" aria-label="Fechar carrinho">✕</button>
-    </div>
-    <div class="drawer__body" id="cartBody"></div>
-    <div class="drawer__foot" id="cartFoot" hidden>
-      <div class="totals">
-        <div class="totals__row"><span id="cartItemsLabel">0 itens</span><span id="cartSubtotal">R$ 0,00</span></div>
-        <div class="totals__row totals__row--main"><span>Total</span><span id="cartTotal">R$ 0,00</span></div>
-      </div>
-      <button class="btn btn--primary btn--block btn--lg" id="checkoutBtn">Agendar retirada →</button>
-    </div>
-  </aside>
-
-  <!-- ========================================================== checkout -->
-  <div class="modal" id="checkoutModal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
-    <div class="modal__backdrop" data-close-modal></div>
-    <div class="modal__panel">
-      <div class="modal__head">
-        <h2 id="checkoutTitle">Finalizar pedido</h2>
-        <button class="icon-btn" data-close-modal aria-label="Fechar">✕</button>
-      </div>
-
-      <form class="modal__body" id="checkoutForm" novalidate>
-        <div class="callout">
-          <span aria-hidden="true">🛍️</span>
-          <span>Seu pedido é para <strong>retirada no local</strong>. Ao enviar, abrimos o WhatsApp da esfiharia com todos os detalhes.</span>
-        </div>
-
-        <div class="field" id="fieldName">
-          <label for="customerName">Seu nome</label>
-          <input class="input" id="customerName" name="name" type="text" autocomplete="name"
-                 placeholder="Ex.: Maria Silva" required>
-          <span class="field__error">Informe seu nome.</span>
-        </div>
-
-        <div class="field" id="fieldPhone">
-          <label for="customerPhone">Seu WhatsApp <span class="field__hint">(para a gente confirmar)</span></label>
-          <input class="input" id="customerPhone" name="phone" type="tel" inputmode="numeric"
-                 autocomplete="tel" placeholder="(15) 99999-9999" maxlength="16" required>
-          <span class="field__error">Informe um telefone com DDD.</span>
-        </div>
-
-        <div class="field" id="fieldDate">
-          <span class="field__label">Dia da retirada</span>
-          <div class="chips" id="dateChips"></div>
-          <span class="field__error">Escolha o dia da retirada.</span>
-        </div>
-
-        <div class="field" id="fieldTime">
-          <span class="field__label">Horário da retirada</span>
-          <div class="chips chips--times" id="timeChips"></div>
-          <span class="field__error">Escolha o horário da retirada.</span>
-        </div>
-
-        <div class="field">
-          <label for="customerNotes">Observações <span class="field__hint">(opcional)</span></label>
-          <textarea class="textarea" id="customerNotes" name="notes"
-                    placeholder="Ex.: esfiha de carne sem cebola, embalar separado…"></textarea>
-        </div>
-
-        <div class="summary" id="orderSummary"></div>
-      </form>
-
-      <div class="modal__foot">
-        <button class="btn btn--whats btn--block btn--lg" id="sendOrder" form="checkoutForm" type="submit">
-          <span aria-hidden="true">💬</span> Enviar pedido pelo WhatsApp
-        </button>
-      </div>
+    <div id="closedSlot"></div>
+    <div class="searchbar" id="searchWrap">
+      <span class="searchbar__icon" aria-hidden="true">🔎</span>
+      <input id="search" type="search" placeholder="Buscar no cardápio" aria-label="Buscar no cardápio" autocomplete="off">
+      <button class="searchbar__clear" id="searchClear" aria-label="Limpar busca">✕</button>
     </div>
   </div>
+</section>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<nav class="cats" id="cats" aria-label="Categorias"></nav>
 
-  <script type="module" src="/js/app.js"></script>
+<main class="wrap" id="menu">
+  <div class="list"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+</main>
+
+<footer class="ft">
+  <div class="wrap">
+    <div class="ft__b">
+      <h4 id="ftName">Esfiharia Jataí</h4>
+      <p id="ftAddr">—</p>
+      <p style="margin-top:10px">💬 <a id="ftWhats" href="#" target="_blank" rel="noopener">Falar no WhatsApp</a></p>
+      <p id="ftInsta" hidden>📷 <a id="ftInstaLink" href="#" target="_blank" rel="noopener"></a></p>
+    </div>
+    <div class="ft__b">
+      <h4>Horários</h4>
+      <ul id="ftHours"></ul>
+    </div>
+    <div class="ft__b">
+      <h4>Retirada e pagamento</h4>
+      <p>Trabalhamos <b>somente com retirada no local</b>.</p>
+      <p style="margin-top:8px">Ficou com alguma dúvida sobre prazo, retirada ou pagamento? Fale direto com a gente pelo WhatsApp.</p>
+    </div>
+    <div class="ft__end">
+      <span>© <span id="year">2026</span> <span id="ftName2">Esfiharia Jataí</span></span>
+      <a href="/admin.html">Área do administrador</a>
+    </div>
+  </div>
+</footer>
+
+<a class="wfab" id="wfab" href="#" target="_blank" rel="noopener" aria-label="Tirar dúvidas no WhatsApp"><span aria-hidden="true">💬</span><span class="wfab__t">Dúvidas?</span></a>
+
+<div class="cartbar" id="cartbar">
+  <button class="cartbar__in" id="cartOpen">
+    <span aria-hidden="true">🛒</span>
+    <span style="text-align:left">
+      <span class="cartbar__c" id="cartCount">0 itens</span><br>
+      <span class="cartbar__t money" id="cartTotal">R$ 0,00</span>
+    </span>
+    <span class="cartbar__go">VER PEDIDO</span>
+  </button>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ============ folha: adicionais do produto ============ -->
+<section class="sheet" id="optSheet" role="dialog" aria-modal="true" aria-labelledby="optTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h">
+    <h2 id="optTitle">Personalizar</h2>
+    <button class="iconbtn" data-close aria-label="Fechar">✕</button>
+  </div>
+  <div class="sheet__b" id="optBody"></div>
+  <div class="sheet__f">
+    <button class="btn btn--brand btn--block btn--lg" id="optAdd">Adicionar</button>
+  </div>
+</section>
+
+<!-- ============ folha: carrinho ============ -->
+<section class="sheet" id="cartSheet" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h">
+    <h2 id="cartTitle">Seu pedido</h2>
+    <button class="iconbtn" id="cartClear" title="Esvaziar" aria-label="Esvaziar pedido">🗑️</button>
+    <button class="iconbtn" data-close aria-label="Fechar">✕</button>
+  </div>
+  <div class="sheet__b" id="cartBody"></div>
+  <div class="sheet__f" id="cartFoot" hidden>
+    <div class="tot">
+      <div class="tot__r"><span id="cartItems">0 itens</span><span class="money" id="cartSub">R$ 0,00</span></div>
+      <div class="tot__r tot__r--big"><span>Total</span><b class="money" id="cartBig">R$ 0,00</b></div>
+    </div>
+    <button class="btn btn--brand btn--block btn--lg" id="toCheckout">CONTINUAR PEDIDO</button>
+  </div>
+</section>
+
+<!-- ============ folha: checkout ============ -->
+<section class="sheet" id="coSheet" role="dialog" aria-modal="true" aria-labelledby="coTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h">
+    <h2 id="coTitle">Seus dados</h2>
+    <button class="iconbtn" data-close aria-label="Fechar">✕</button>
+  </div>
+  <form class="sheet__b" id="coForm" novalidate>
+    <div class="callout">
+      <span aria-hidden="true">🛍️</span>
+      <span>Pedido para <b>retirada no local</b>. Ao enviar, abrimos o WhatsApp da esfiharia com tudo pronto.</span>
+    </div>
+
+    <div class="f" id="fName">
+      <label for="cName">Seu nome</label>
+      <input class="in" id="cName" type="text" autocomplete="name" placeholder="Ex.: Maria Silva" required maxlength="80">
+      <span class="f__e">Informe seu nome.</span>
+    </div>
+
+    <div class="f" id="fPhone">
+      <label for="cPhone">Seu WhatsApp <span class="f__hint">(para confirmarmos)</span></label>
+      <input class="in" id="cPhone" type="tel" inputmode="numeric" autocomplete="tel"
+             placeholder="(15) 99999-9999" maxlength="16" required>
+      <span class="f__e">Informe um telefone com DDD.</span>
+    </div>
+
+    <div class="f" id="fDate">
+      <span class="f__l">Dia da retirada</span>
+      <div class="chips" id="dayChips"></div>
+      <span class="f__e">Escolha o dia.</span>
+    </div>
+
+    <div class="f" id="fTime">
+      <span class="f__l">Horário</span>
+      <div class="chips chips--t" id="timeChips"></div>
+      <span class="f__e">Escolha o horário.</span>
+    </div>
+
+    <div class="f">
+      <label for="cNotes">Observações <span class="f__hint">(opcional)</span></label>
+      <textarea class="in" id="cNotes" maxlength="500" placeholder="Ex.: sem cebola em duas esfihas."></textarea>
+    </div>
+
+    <div class="sum" id="coSum"></div>
+  </form>
+  <div class="sheet__f">
+    <button class="btn btn--whats btn--block btn--lg" id="coSend" type="submit" form="coForm">
+      <span aria-hidden="true">💬</span> ENVIAR PELO WHATSAPP
+    </button>
+  </div>
+</section>
+
+<!-- ============ folha: pedido confirmado ============ -->
+<section class="sheet" id="okSheet" role="dialog" aria-modal="true" aria-labelledby="okTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__b" style="padding-top:14px">
+    <div class="done">
+      <div class="done__ic" aria-hidden="true">✓</div>
+      <h2 id="okTitle">Tudo certo! 🥟</h2>
+      <p class="done__sub">Seu pedido foi registrado no nosso sistema.</p>
+      <div class="code" id="okCode"><small>Pedido</small>—</div>
+    </div>
+    <div class="sum" id="okSum"></div>
+    <p style="font-size:13px;color:var(--ink-soft);margin:14px 0 0;text-align:center">
+      Toque no botão abaixo e depois em <b>Enviar</b> no WhatsApp para confirmar com a loja.
+    </p>
+  </div>
+  <div class="sheet__f">
+    <a class="btn btn--whats btn--block btn--lg" id="okGo" href="#" target="_blank" rel="noopener">
+      <span aria-hidden="true">💬</span> ABRIR O WHATSAPP
+    </a>
+    <button class="btn btn--ghost btn--block" id="okDone" style="margin-top:8px">Fazer outro pedido</button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>

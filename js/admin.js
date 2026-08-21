@@ -1,639 +1,815 @@
-/* Painel do administrador: login, produtos, categorias e configurações da loja. */
+/* =============================================================================
+   Painel do administrador.
+   Também mobile first: o dono precisa mexer no cardápio pelo celular.
+   ========================================================================== */
 
-import { $, $$, escapeHtml, maskPhone, money, onlyDigits, parseMoney, toast } from './utils.js';
+import { $, $$, dateTimeBR, escapeHtml, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js';
 import { isConfigured, SETUP_MESSAGE } from './supabase.js';
 import * as data from './data.js';
 
-const WEEKDAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
-const state = {
+const S = {
   user: null,
   products: [],
-  categories: [],
+  cats: [],
+  groups: [],
+  orders: [],
   settings: null,
-  editingProductId: null,
-  editingCategoryId: null,
-  pendingImage: '',
+  editP: null,
+  editC: null,
+  editG: null,
+  pImage: '',
+  logo: '',
+  gItems: [],
 };
 
 boot();
 
 async function boot() {
-  bindEvents();
-
+  bind();
   if (!isConfigured) {
-    showLogin();
     $('#loginForm').hidden = true;
-    return showAlert('#loginError', SETUP_MESSAGE);
+    return showAlert('#loginErr', SETUP_MESSAGE);
   }
-
   try {
     const user = await data.currentUser();
-    if (user) await enterPanel(user);
-    else showLogin();
-  } catch {
-    showLogin();
-  }
+    if (user) await enter(user);
+  } catch { /* segue para o login */ }
 }
 
-/* -------------------------------------------------------------------- login */
+/* ------------------------------------------------------------------ acesso */
 
-function showLogin() {
-  $('#loginScreen').style.display = 'grid';
-  $('#adminShell').classList.remove('is-visible');
-  $('#email').focus();
+async function enter(user) {
+  S.user = user;
+  $('#login').style.display = 'none';
+  $('#shell').classList.add('is-on');
+  $('#who').textContent = user.email || '';
+  await Promise.all([loadCats(), loadGroups(), loadProducts(), loadSettings(), loadHome()]);
 }
 
-async function enterPanel(user) {
-  state.user = user;
-  $('#loginScreen').style.display = 'none';
-  $('#adminShell').classList.add('is-visible');
-  $('#adminUser').textContent = user.email || 'Administrador';
-  await Promise.all([loadCategories(), loadProducts(), loadSettings()]);
-}
-
-async function handleLogin(event) {
-  event.preventDefault();
-  const button = $('#loginBtn');
-  const error = $('#loginError');
-
-  button.disabled = true;
-  button.textContent = 'Entrando…';
-  error.classList.remove('is-visible');
-
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = $('#loginBtn');
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  hideAlert('#loginErr');
   try {
-    const user = await data.signIn($('#email').value, $('#password').value);
-    $('#password').value = '';
-    await enterPanel(user);
+    const user = await data.signIn($('#email').value, $('#pass').value);
+    $('#pass').value = '';
+    await enter(user);
   } catch (err) {
-    error.textContent = err.message;
-    error.classList.add('is-visible');
-    $('#password').select();
+    showAlert('#loginErr', err.message);
+    $('#pass').select();
   } finally {
-    button.disabled = false;
-    button.textContent = 'Entrar';
+    btn.disabled = false; btn.textContent = 'Entrar';
   }
 }
 
-async function handleLogout() {
-  await data.signOut().catch(() => {});
-  location.reload();
-}
-
-/** Quando a sessão expira, volta para o login em vez de mostrar erro solto. */
-function guard(error) {
-  if (/sess(ã|a)o expirou|JWT|token .*expired|not authenticated/i.test(error.message)) {
-    toast('Sua sessão expirou. Entre novamente.');
+/** Sessão expirada volta para o login em vez de mostrar erro solto. */
+function guard(err) {
+  if (/sess(ã|a)o expirou|JWT|not authenticated/i.test(err.message)) {
+    toast('Sua sessão expirou. Entre novamente.', 'bad');
     setTimeout(() => location.reload(), 1500);
     return true;
   }
   return false;
 }
 
-/* ----------------------------------------------------------------- produtos */
+const oops = (err) => { if (!guard(err)) toast(err.message, 'bad'); };
+
+/* ------------------------------------------------------------------ início */
+
+async function loadHome() {
+  try {
+    const [stats, orders] = await Promise.all([data.dashboardStats(), data.listOrders({ limit: 8 })]);
+    $('#stats').innerHTML = `
+      <div class="stat"><div class="stat__l">Pedidos hoje</div><div class="stat__v">${stats.ordersToday}</div></div>
+      <div class="stat stat--brand"><div class="stat__l">Valor hoje</div><div class="stat__v money">${money(stats.revenueToday)}</div></div>
+      <div class="stat"><div class="stat__l">Disponíveis</div><div class="stat__v">${stats.available}</div></div>
+      <div class="stat"><div class="stat__l">Esgotados</div><div class="stat__v">${stats.unavailable}</div></div>`;
+    $('#recent').innerHTML = orders.length ? orders.map(orderRow).join('')
+      : `<div class="empty-box"><div class="empty-box__ic">🧾</div>Nenhum pedido ainda.</div>`;
+  } catch (err) { oops(err); }
+}
+
+/* ----------------------------------------------------------------- pedidos */
+
+async function loadOrders() {
+  try {
+    S.orders = await data.listOrders({ status: $('#oStatus').value, search: $('#oSearch').value });
+    renderOrders();
+  } catch (err) { oops(err); }
+}
+
+function renderOrders() {
+  const term = $('#oSearch').value.trim().toUpperCase();
+  const box = $('#verified');
+
+  // Item 48: conferência do código recebido no WhatsApp.
+  const exact = S.orders.find((o) => o.public_code.toUpperCase() === term
+    || o.public_code.toUpperCase() === `JT-${term}`);
+  box.innerHTML = exact ? `
+    <div class="verified">
+      <div class="verified__t">✅ Pedido registrado</div>
+      <div class="verified__c">${escapeHtml(exact.public_code)}</div>
+      <div class="verified__v money">Total oficial: ${money(exact.total_cents)}</div>
+      <div class="verified__d">${escapeHtml(exact.customer_name)} · criado em ${dateTimeBR(exact.created_at)}</div>
+    </div>` : '';
+
+  $('#orders').innerHTML = S.orders.length ? S.orders.map(orderRow).join('')
+    : `<div class="empty-box"><div class="empty-box__ic">🔎</div>Nenhum pedido encontrado.</div>`;
+}
+
+function orderRow(o) {
+  const n = (o.order_items || []).reduce((s, i) => s + i.quantity, 0);
+  return `
+    <article class="row" data-o="${o.id}">
+      <div class="row__ph" style="font-size:17px">🧾</div>
+      <div>
+        <div class="row__t">${escapeHtml(o.public_code)} <span class="tag tag--${o.status}">${o.status}</span></div>
+        <p class="row__d">${escapeHtml(o.customer_name)} · ${maskPhone(o.customer_phone)}</p>
+        <div class="row__m">
+          <span class="tag tag--p money">${money(o.total_cents)}</span>
+          <span>${n} ${n === 1 ? 'item' : 'itens'}</span>
+          <span>${dateTimeBR(o.created_at)}</span>
+        </div>
+      </div>
+      <div class="row__a"><button class="mini mini--go" data-open="${o.id}">Ver pedido</button></div>
+    </article>`;
+}
+
+function openOrder(id) {
+  const o = S.orders.find((x) => x.id === id);
+  if (!o) return;
+
+  $('#oTitle').textContent = o.public_code;
+  $('#oBody').innerHTML = `
+    <div class="verified">
+      <div class="verified__t">✅ Pedido registrado</div>
+      <div class="verified__c">${escapeHtml(o.public_code)}</div>
+      <div class="verified__v money">Total oficial: ${money(o.total_cents)}</div>
+      <div class="verified__d">Criado em ${dateTimeBR(o.created_at)}</div>
+    </div>
+    <div class="block">
+      <h3>Cliente</h3>
+      <p style="margin:0;font-size:14px">${escapeHtml(o.customer_name)}</p>
+      <p style="margin:4px 0 0"><a href="https://wa.me/55${o.customer_phone}" target="_blank" rel="noopener"
+         style="color:var(--whats);font-weight:700">${maskPhone(o.customer_phone)} ↗</a></p>
+      ${o.pickup_at ? `<p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-soft)">🛍️ Retirada: ${dateTimeBR(o.pickup_at)}</p>` : ''}
+      ${o.notes ? `<p style="margin:8px 0 0;font-size:13.5px">📝 ${escapeHtml(o.notes)}</p>` : ''}
+    </div>
+    <div class="block">
+      <h3>Itens</h3>
+      ${(o.order_items || []).map((i) => `
+        <div class="oline">
+          <span>
+            <b>${i.quantity}×</b> ${escapeHtml(i.product_name_snapshot)}
+            <span class="oline__a">${money(i.unit_price_cents_snapshot)} cada</span>
+            ${(i.order_item_addons || []).map((a) => `<br><span class="oline__a">+ ${escapeHtml(a.addon_name_snapshot)} (${money(a.addon_price_cents_snapshot)})</span>`).join('')}
+            ${i.notes ? `<br><span class="oline__a">obs: ${escapeHtml(i.notes)}</span>` : ''}
+          </span>
+          <b class="money">${money(i.subtotal_cents)}</b>
+        </div>`).join('')}
+      <div class="oline" style="margin-top:8px;border-top:2px solid var(--line);padding-top:10px">
+        <b>Total</b><b class="money" style="color:var(--brand);font-size:17px">${money(o.total_cents)}</b>
+      </div>
+    </div>`;
+
+  $('#oFoot').innerHTML = `
+    <label class="f__l">Situação do pedido</label>
+    <div class="chips">
+      ${['novo', 'confirmado', 'preparando', 'finalizado', 'cancelado'].map((s) =>
+        `<button class="chip ${o.status === s ? 'is-on' : ''}" data-st="${s}" data-oid="${o.id}">${s}</button>`).join('')}
+    </div>`;
+
+  openSheet('#oSheet');
+}
+
+async function changeStatus(id, status) {
+  try {
+    await data.setOrderStatus(id, status);
+    const o = S.orders.find((x) => x.id === id);
+    if (o) o.status = status;
+    renderOrders();
+    openOrder(id);
+    loadHome();
+    toast('Pedido atualizado.', 'ok');
+  } catch (err) { oops(err); }
+}
+
+/* ---------------------------------------------------------------- produtos */
 
 async function loadProducts() {
-  try {
-    state.products = await data.listProducts();
-    renderProducts();
-  } catch (error) {
-    if (!guard(error)) toast(error.message);
-  }
+  try { S.products = await data.listProducts(); renderProducts(); } catch (err) { oops(err); }
 }
 
 function renderProducts() {
-  const term = $('#productSearch').value.trim().toLowerCase();
-  const filter = $('#productFilter').value;
+  const term = $('#pSearch').value.trim().toLowerCase();
+  const cat = $('#pFilter').value;
+  const list = S.products.filter((p) =>
+    (!term || p.name.toLowerCase().includes(term) || (p.description || '').toLowerCase().includes(term)) &&
+    (!cat || String(p.category_id) === cat));
 
-  const visible = state.products.filter((product) => {
-    const matchesTerm =
-      !term ||
-      product.name.toLowerCase().includes(term) ||
-      (product.description || '').toLowerCase().includes(term);
-    const matchesCategory = !filter || String(product.category_id) === filter;
-    return matchesTerm && matchesCategory;
-  });
-
-  const list = $('#productList');
-
-  if (!visible.length) {
-    list.innerHTML = `
-      <div class="empty-box">
-        <div class="empty-box__icon">🥟</div>
-        <p><strong>${state.products.length ? 'Nenhum produto encontrado.' : 'Nenhum produto cadastrado ainda.'}</strong></p>
-        <p>${state.products.length ? 'Tente outra busca ou categoria.' : 'Clique em “Novo produto” para começar o cardápio.'}</p>
-      </div>`;
-    return;
-  }
-
-  list.innerHTML = visible
-    .map(
-      (product) => `
-      <article class="row ${product.available ? '' : 'is-off'}" data-id="${product.id}">
-        <div class="row__thumb">${
-          product.image
-            ? `<img src="${escapeHtml(product.image)}" alt="">`
-            : '<span aria-hidden="true">🥟</span>'
-        }</div>
-        <div>
-          <div class="row__title">
-            ${escapeHtml(product.name)}
-            ${product.available ? '' : '<span class="tag tag--off">Indisponível</span>'}
-          </div>
-          ${product.description ? `<p class="row__desc">${escapeHtml(product.description)}</p>` : ''}
-          <div class="row__meta">
-            <span class="tag tag--price">${money(product.price_cents)}</span>
-            <span class="tag">${escapeHtml(product.category_name || 'Sem categoria')}</span>
-            <span>por ${escapeHtml(product.unit || 'unidade')}</span>
-          </div>
+  $('#products').innerHTML = list.length ? list.map((p) => {
+    const promo = p.promo_price_cents > 0 && p.promo_price_cents < p.price_cents;
+    return `
+    <article class="row ${p.available ? '' : 'off'}" data-p="${p.id}">
+      <div class="row__ph">${p.image ? `<img src="${escapeHtml(p.image)}" alt="" loading="lazy">` : '🥟'}</div>
+      <div>
+        <div class="row__t">${escapeHtml(p.name)}
+          ${p.available ? '' : '<span class="tag tag--off">Esgotado</span>'}
+          ${p.featured ? '<span class="tag tag--promo">🔥 Destaque</span>' : ''}
         </div>
-        <div class="row__actions">
-          <label class="switch" title="Disponível no cardápio">
-            <input type="checkbox" data-toggle="${product.id}" ${product.available ? 'checked' : ''}>
-            <span class="switch__track"></span>
-          </label>
-          <button class="mini-btn" data-edit="${product.id}">Editar</button>
-          <button class="mini-btn mini-btn--danger" data-delete="${product.id}">Excluir</button>
+        ${p.description ? `<p class="row__d">${escapeHtml(p.description)}</p>` : ''}
+        <div class="row__m">
+          <span class="tag tag--p money">${money(promo ? p.promo_price_cents : p.price_cents)}</span>
+          ${promo ? `<span class="tag tag--promo">promo</span>` : ''}
+          <span class="tag">${escapeHtml(p.category_name || 'Sem categoria')}</span>
         </div>
-      </article>`
-    )
-    .join('');
+      </div>
+      <div class="row__a">
+        <label class="sw" title="Disponível"><input type="checkbox" data-av="${p.id}" ${p.available ? 'checked' : ''}><span class="sw__t"></span></label>
+        <button class="mini" data-edit="${p.id}">Editar</button>
+        <button class="mini mini--bad" data-del="${p.id}">Excluir</button>
+      </div>
+    </article>`;
+  }).join('') : `<div class="empty-box"><div class="empty-box__ic">🥟</div>
+      ${S.products.length ? 'Nenhum produto encontrado.' : 'Clique em “Novo” para começar o cardápio.'}</div>`;
 }
 
-function openProductModal(product = null) {
-  state.editingProductId = product?.id ?? null;
-  state.pendingImage = product?.image || '';
+async function openProduct(p = null) {
+  S.editP = p?.id ?? null;
+  S.pImage = p?.image || '';
 
-  $('#productModalTitle').textContent = product ? 'Editar produto' : 'Novo produto';
-  $('#productName').value = product?.name || '';
-  $('#productDescription').value = product?.description || '';
-  $('#productPrice').value = product ? (product.price_cents / 100).toFixed(2).replace('.', ',') : '';
-  $('#productUnit').value = product?.unit || 'unidade';
-  $('#productOrder').value = product?.sort_order ?? '';
-  $('#productAvailable').checked = product ? Boolean(product.available) : true;
+  $('#pTitle').textContent = p ? 'Editar produto' : 'Novo produto';
+  $('#pName').value = p?.name || '';
+  $('#pDesc').value = p?.description || '';
+  $('#pPrice').value = p ? (p.price_cents / 100).toFixed(2).replace('.', ',') : '';
+  $('#pPromo').value = p?.promo_price_cents ? (p.promo_price_cents / 100).toFixed(2).replace('.', ',') : '';
+  $('#pStart').value = p?.promo_start ? p.promo_start.slice(0, 10) : '';
+  $('#pEnd').value = p?.promo_end ? p.promo_end.slice(0, 10) : '';
+  $('#pUnit').value = p?.unit || 'unidade';
+  $('#pOrder').value = p?.sort_order ?? '';
+  $('#pAvail').checked = p ? Boolean(p.available) : true;
+  $('#pFeat').checked = p ? Boolean(p.featured) : false;
 
-  $('#productCategory').innerHTML =
-    '<option value="">Sem categoria</option>' +
-    state.categories
-      .map(
-        (category) =>
-          `<option value="${category.id}" ${
-            product?.category_id === category.id ? 'selected' : ''
-          }>${escapeHtml(category.name)}</option>`
-      )
-      .join('');
+  $('#pCat').innerHTML = '<option value="">Sem categoria</option>' +
+    S.cats.map((c) => `<option value="${c.id}" ${p?.category_id === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+  if (!p && S.cats.length) $('#pCat').value = String(S.cats[0].id);
 
-  if (!product && state.categories.length) $('#productCategory').value = String(state.categories[0].id);
+  const linked = p ? await data.getProductGroups(p.id).catch(() => []) : [];
+  $('#pGroups').innerHTML = S.groups.length ? S.groups.map((g) => `
+    <label class="aopt ${linked.includes(g.id) ? 'is-on' : ''}" data-g="${g.id}">
+      <input type="checkbox" ${linked.includes(g.id) ? 'checked' : ''}>
+      <span class="aopt__box" aria-hidden="true"></span>
+      <span class="aopt__n">${escapeHtml(g.name)}</span>
+      <span class="aopt__p">${g.addons.length} itens</span>
+    </label>`).join('')
+    : '<p style="font-size:13px;color:var(--ink-faint);margin:0">Crie grupos na aba Adicionais.</p>';
 
-  renderImagePreview();
-  hideAlert('#productError');
-  openModal('#productModal');
-  setTimeout(() => $('#productName').focus(), 240);
+  previewImage();
+  hideAlert('#pErr');
+  openSheet('#pSheet');
 }
 
-async function saveProduct(event) {
-  event.preventDefault();
-  const button = $('#saveProductBtn');
-  const priceCents = parseMoney($('#productPrice').value);
+async function saveProduct(e) {
+  e.preventDefault();
+  const btn = $('#pSave');
+  const price = parseMoney($('#pPrice').value);
+  const promoRaw = $('#pPromo').value.trim();
+  const promo = promoRaw ? parseMoney(promoRaw) : null;
 
-  if (!$('#productName').value.trim()) return showAlert('#productError', 'Informe o nome do produto.');
-  if (!Number.isFinite(priceCents) || priceCents < 0) {
-    return showAlert('#productError', 'Informe um preço válido, por exemplo 8,00.');
-  }
+  if (!$('#pName').value.trim()) return showAlert('#pErr', 'Informe o nome do produto.');
+  if (!Number.isFinite(price) || price < 0) return showAlert('#pErr', 'Informe um preço válido, por exemplo 8,00.');
+  if (promoRaw && (!Number.isFinite(promo) || promo <= 0)) return showAlert('#pErr', 'Preço promocional inválido.');
+  if (promo && promo >= price) return showAlert('#pErr', 'O preço promocional precisa ser menor que o normal.');
 
   const payload = {
-    name: $('#productName').value.trim(),
-    description: $('#productDescription').value.trim(),
-    price_cents: priceCents,
-    unit: $('#productUnit').value.trim() || 'unidade',
-    category_id: $('#productCategory').value ? Number($('#productCategory').value) : null,
-    image: state.pendingImage,
-    available: $('#productAvailable').checked,
+    name: $('#pName').value.trim(),
+    description: $('#pDesc').value.trim(),
+    price_cents: price,
+    promo_price_cents: promo,
+    promo_start: $('#pStart').value ? new Date(`${$('#pStart').value}T00:00:00`).toISOString() : null,
+    promo_end: $('#pEnd').value ? new Date(`${$('#pEnd').value}T23:59:59`).toISOString() : null,
+    unit: $('#pUnit').value.trim() || 'unidade',
+    category_id: $('#pCat').value ? Number($('#pCat').value) : null,
+    image: S.pImage,
+    available: $('#pAvail').checked,
+    featured: $('#pFeat').checked,
   };
-  const order = $('#productOrder').value;
-  if (order !== '') payload.sort_order = Number(order);
+  const ord = $('#pOrder').value;
+  if (ord !== '') payload.sort_order = Number(ord);
 
-  button.disabled = true;
-  button.textContent = 'Salvando…';
-
+  btn.disabled = true; btn.textContent = 'Salvando…';
   try {
-    if (state.editingProductId) await data.updateProduct(state.editingProductId, payload);
-    else await data.createProduct(payload);
-    closeModal('#productModal');
-    toast(state.editingProductId ? 'Produto atualizado.' : 'Produto cadastrado.');
+    const saved = S.editP
+      ? await data.updateProduct(S.editP, payload)
+      : await data.createProduct(payload);
+
+    const groups = $$('#pGroups .aopt.is-on').map((el) => Number(el.dataset.g));
+    await data.setProductGroups(saved.id, groups);
+
+    closeSheets();
+    toast(S.editP ? 'Produto atualizado.' : 'Produto cadastrado.', 'ok');
     await loadProducts();
-  } catch (error) {
-    if (!guard(error)) showAlert('#productError', error.message);
+    loadHome();
+  } catch (err) {
+    if (!guard(err)) showAlert('#pErr', err.message);
   } finally {
-    button.disabled = false;
-    button.textContent = 'Salvar produto';
+    btn.disabled = false; btn.textContent = 'Salvar';
   }
 }
 
-async function deleteProduct(id) {
-  const product = state.products.find((item) => item.id === id);
-  if (!product) return;
-  if (!confirm(`Excluir "${product.name}" do cardápio? Essa ação não pode ser desfeita.`)) return;
+async function delProduct(id) {
+  const p = S.products.find((x) => x.id === id);
+  if (!p || !confirm(`Excluir "${p.name}" do cardápio? Essa ação não pode ser desfeita.`)) return;
+  try { await data.deleteProduct(id); toast('Produto excluído.', 'ok'); await loadProducts(); loadHome(); }
+  catch (err) { oops(err); }
+}
 
+async function toggleAvail(id, on) {
   try {
-    await data.deleteProduct(id);
-    toast('Produto excluído.');
-    await loadProducts();
-  } catch (error) {
-    if (!guard(error)) toast(error.message);
-  }
+    await data.updateProduct(id, { available: on });
+    const p = S.products.find((x) => x.id === id);
+    if (p) p.available = on;
+    renderProducts(); loadHome();
+    toast(on ? 'Disponível no cardápio.' : 'Escondido do cardápio.', 'ok');
+  } catch (err) { oops(err); await loadProducts(); }
 }
 
-async function toggleProduct(id, available) {
-  try {
-    await data.updateProduct(id, { available });
-    const product = state.products.find((item) => item.id === id);
-    if (product) product.available = available;
-    renderProducts();
-    toast(available ? 'Produto disponível no cardápio.' : 'Produto escondido do cardápio.');
-  } catch (error) {
-    if (!guard(error)) toast(error.message);
-    await loadProducts();
-  }
+/* ------------------------------------------------------------------ fotos */
+
+function previewImage() {
+  $('#pPrev').innerHTML = S.pImage ? `<img src="${escapeHtml(S.pImage)}" alt="">` : '📷';
+  $('#pDel').hidden = !S.pImage;
 }
 
-/* ------------------------------------------------------------------ imagem */
-
-function renderImagePreview() {
-  const preview = $('#imagePreview');
-  preview.innerHTML = state.pendingImage
-    ? `<img src="${escapeHtml(state.pendingImage)}" alt="">`
-    : '<span aria-hidden="true">📷</span>';
-  $('#removeImageBtn').hidden = !state.pendingImage;
-}
-
-/** Reduz a foto no navegador antes de enviar, para o site carregar rápido. */
-function shrinkImage(file, maxSize = 1000, quality = 0.82) {
-  return new Promise((resolve) => {
-    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return resolve(file);
-
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
-      if (scale === 1 && file.size < 400_000) return resolve(file);
-
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(image.width * scale);
-      canvas.height = Math.round(image.height * scale);
-      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-
-      canvas.toBlob(
-        (blob) => resolve(blob ? new File([blob], 'foto.jpg', { type: 'image/jpeg' }) : file),
-        'image/jpeg',
-        quality
-      );
-    };
-
-    image.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-    image.src = url;
-  });
-}
-
-async function uploadImage(file) {
+async function upload(file, onDone, btnSel, errSel) {
   if (!file) return;
-  if (file.size > 15 * 1024 * 1024) return showAlert('#productError', 'Essa imagem é grande demais.');
-
-  const button = $('#pickImageBtn');
-  button.disabled = true;
-  button.textContent = 'Enviando…';
-  hideAlert('#productError');
-
+  if (file.size > 15 * 1024 * 1024) return showAlert(errSel, 'Essa imagem é grande demais.');
+  const btn = $(btnSel);
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  hideAlert(errSel);
   try {
-    state.pendingImage = await data.uploadImage(await shrinkImage(file));
-    renderImagePreview();
-  } catch (error) {
-    if (!guard(error)) showAlert('#productError', error.message);
+    onDone(await data.uploadImage(await shrinkImage(file)));
+  } catch (err) {
+    if (!guard(err)) showAlert(errSel, err.message);
   } finally {
-    button.disabled = false;
-    button.textContent = 'Escolher foto';
-    $('#imageInput').value = '';
+    btn.disabled = false; btn.textContent = 'Escolher foto';
   }
 }
 
-/* --------------------------------------------------------------- categorias */
+/* ------------------------------------------------------------- categorias */
 
-async function loadCategories() {
+async function loadCats() {
   try {
-    state.categories = await data.listCategories();
-    renderCategories();
-
-    const filter = $('#productFilter');
-    const current = filter.value;
-    filter.innerHTML =
-      '<option value="">Todas as categorias</option>' +
-      state.categories
-        .map((category) => `<option value="${category.id}">${escapeHtml(category.name)}</option>`)
-        .join('');
-    filter.value = current;
-  } catch (error) {
-    if (!guard(error)) toast(error.message);
-  }
-}
-
-function renderCategories() {
-  const list = $('#categoryList');
-
-  if (!state.categories.length) {
-    list.innerHTML = `
-      <div class="empty-box">
-        <div class="empty-box__icon">🗂️</div>
-        <p><strong>Nenhuma categoria cadastrada.</strong></p>
-        <p>Crie categorias como “Esfihas Salgadas” e “Bebidas” para organizar o cardápio.</p>
-      </div>`;
-    return;
-  }
-
-  list.innerHTML = state.categories
-    .map(
-      (category) => `
-      <article class="row" data-id="${category.id}">
-        <div class="row__thumb" style="font-size:1.8rem">${escapeHtml(category.icon || '🗂️')}</div>
+    S.cats = await data.listCategories();
+    $('#cats').innerHTML = S.cats.length ? S.cats.map((c) => `
+      <article class="row ${c.active ? '' : 'off'}" data-c="${c.id}">
+        <div class="row__ph" style="font-size:24px">${escapeHtml(c.icon || '🗂️')}</div>
         <div>
-          <div class="row__title">${escapeHtml(category.name)}</div>
-          <div class="row__meta">
-            <span>${category.product_count} ${category.product_count === 1 ? 'produto' : 'produtos'}</span>
-            <span>ordem ${category.sort_order}</span>
-          </div>
+          <div class="row__t">${escapeHtml(c.name)} ${c.active ? '' : '<span class="tag tag--off">Oculta</span>'}</div>
+          <div class="row__m"><span>${c.product_count} produtos</span><span>ordem ${c.sort_order}</span></div>
         </div>
-        <div class="row__actions">
-          <button class="mini-btn" data-edit-cat="${category.id}">Editar</button>
-          <button class="mini-btn mini-btn--danger" data-delete-cat="${category.id}">Excluir</button>
+        <div class="row__a">
+          <button class="mini" data-ec="${c.id}">Editar</button>
+          <button class="mini mini--bad" data-dc="${c.id}">Excluir</button>
         </div>
-      </article>`
-    )
-    .join('');
+      </article>`).join('')
+      : `<div class="empty-box"><div class="empty-box__ic">🗂️</div>Crie categorias como “Esfihas Salgadas” e “Bebidas”.</div>`;
+
+    const f = $('#pFilter'); const cur = f.value;
+    f.innerHTML = '<option value="">Todas as categorias</option>' +
+      S.cats.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    f.value = cur;
+  } catch (err) { oops(err); }
 }
 
-function openCategoryModal(category = null) {
-  state.editingCategoryId = category?.id ?? null;
-  $('#categoryModalTitle').textContent = category ? 'Editar categoria' : 'Nova categoria';
-  $('#categoryName').value = category?.name || '';
-  $('#categoryIcon').value = category?.icon || '';
-  $('#categoryOrder').value = category?.sort_order ?? '';
-  hideAlert('#categoryError');
-  openModal('#categoryModal');
-  setTimeout(() => $('#categoryName').focus(), 240);
+function openCat(c = null) {
+  S.editC = c?.id ?? null;
+  $('#cTitle').textContent = c ? 'Editar categoria' : 'Nova categoria';
+  $('#cName').value = c?.name || '';
+  $('#cIcon').value = c?.icon || '';
+  $('#cOrder').value = c?.sort_order ?? '';
+  $('#cActive').checked = c ? Boolean(c.active) : true;
+  hideAlert('#cErr');
+  openSheet('#cSheet');
 }
 
-async function saveCategory(event) {
-  event.preventDefault();
-  const name = $('#categoryName').value.trim();
-  if (!name) return showAlert('#categoryError', 'Informe o nome da categoria.');
-
-  const payload = { name, icon: $('#categoryIcon').value.trim() };
-  const order = $('#categoryOrder').value;
-  if (order !== '') payload.sort_order = Number(order);
-
+async function saveCat(e) {
+  e.preventDefault();
+  const name = $('#cName').value.trim();
+  if (!name) return showAlert('#cErr', 'Informe o nome da categoria.');
+  const payload = { name, icon: $('#cIcon').value.trim(), active: $('#cActive').checked };
+  const ord = $('#cOrder').value;
+  if (ord !== '') payload.sort_order = Number(ord);
   try {
-    if (state.editingCategoryId) await data.updateCategory(state.editingCategoryId, payload);
+    if (S.editC) await data.updateCategory(S.editC, payload);
     else await data.createCategory(payload);
-    closeModal('#categoryModal');
-    toast(state.editingCategoryId ? 'Categoria atualizada.' : 'Categoria criada.');
-    await Promise.all([loadCategories(), loadProducts()]);
-  } catch (error) {
-    if (!guard(error)) showAlert('#categoryError', error.message);
-  }
+    closeSheets();
+    toast(S.editC ? 'Categoria atualizada.' : 'Categoria criada.', 'ok');
+    await Promise.all([loadCats(), loadProducts()]);
+  } catch (err) { if (!guard(err)) showAlert('#cErr', err.message); }
 }
 
-async function deleteCategory(id) {
-  const category = state.categories.find((item) => item.id === id);
-  if (!category) return;
+async function delCat(id) {
+  const c = S.cats.find((x) => x.id === id);
+  if (!c) return;
+  const msg = c.product_count
+    ? `"${c.name}" tem ${c.product_count} produto(s). Eles ficarão sem categoria. Excluir?`
+    : `Excluir a categoria "${c.name}"?`;
+  if (!confirm(msg)) return;
+  try { await data.deleteCategory(id); toast('Categoria excluída.', 'ok'); await Promise.all([loadCats(), loadProducts()]); }
+  catch (err) { oops(err); }
+}
 
-  const warning = category.product_count
-    ? `A categoria "${category.name}" tem ${category.product_count} produto(s). Eles continuarão cadastrados, mas ficarão sem categoria. Excluir mesmo assim?`
-    : `Excluir a categoria "${category.name}"?`;
-  if (!confirm(warning)) return;
+/* -------------------------------------------------------------- adicionais */
+
+async function loadGroups() {
+  try {
+    S.groups = await data.listAddonGroups();
+    $('#groups').innerHTML = S.groups.length ? S.groups.map((g) => `
+      <article class="row ${g.active ? '' : 'off'}">
+        <div class="row__ph" style="font-size:22px">➕</div>
+        <div>
+          <div class="row__t">${escapeHtml(g.name)}
+            ${g.required ? '<span class="tag tag--promo">obrigatório</span>' : ''}
+            ${g.active ? '' : '<span class="tag tag--off">inativo</span>'}</div>
+          <p class="row__d">${g.addons.map((a) => `${escapeHtml(a.name)} (${money(a.price_cents)})`).join(' · ') || 'sem itens'}</p>
+          <div class="row__m"><span>${g.product_count} produtos usam</span><span>até ${g.max_choices} escolha(s)</span></div>
+        </div>
+        <div class="row__a">
+          <button class="mini" data-eg="${g.id}">Editar</button>
+          <button class="mini mini--bad" data-dg="${g.id}">Excluir</button>
+        </div>
+      </article>`).join('')
+      : `<div class="empty-box"><div class="empty-box__ic">➕</div>Crie um grupo como “Adicione um extra”.</div>`;
+  } catch (err) { oops(err); }
+}
+
+function openGroup(g = null) {
+  S.editG = g?.id ?? null;
+  S.gItems = g ? g.addons.map((a) => ({ ...a })) : [];
+  $('#gTitle').textContent = g ? 'Editar grupo' : 'Novo grupo';
+  $('#gName').value = g?.name || '';
+  $('#gMin').value = g?.min_choices ?? 0;
+  $('#gMax').value = g?.max_choices ?? 1;
+  $('#gReq').checked = g ? Boolean(g.required) : false;
+  $('#gActive').checked = g ? Boolean(g.active) : true;
+  renderGItems();
+  hideAlert('#gErr');
+  openSheet('#gSheet');
+}
+
+function renderGItems() {
+  $('#gItems').innerHTML = S.gItems.map((a, i) => `
+    <div style="display:flex;gap:8px;margin-bottom:7px;align-items:center">
+      <input class="in" data-gn="${i}" value="${escapeHtml(a.name)}" placeholder="Nome" style="flex:2;min-height:42px">
+      <input class="in" data-gp="${i}" value="${(a.price_cents / 100).toFixed(2).replace('.', ',')}"
+             inputmode="decimal" placeholder="0,00" style="flex:1;min-height:42px">
+      <button class="mini mini--bad" type="button" data-gr="${i}" aria-label="Remover">✕</button>
+    </div>`).join('');
+}
+
+async function saveGroup(e) {
+  e.preventDefault();
+  const name = $('#gName').value.trim();
+  if (!name) return showAlert('#gErr', 'Informe o nome do grupo.');
+
+  // Lê os itens direto dos campos, para não perder edição não confirmada.
+  const items = S.gItems.map((a, i) => ({
+    ...a,
+    name: ($(`[data-gn="${i}"]`)?.value || '').trim(),
+    price_cents: parseMoney($(`[data-gp="${i}"]`)?.value || '0') || 0,
+  })).filter((a) => a.name);
+
+  if (!items.length) return showAlert('#gErr', 'Adicione pelo menos um item ao grupo.');
 
   try {
-    await data.deleteCategory(id);
-    toast('Categoria excluída.');
-    await Promise.all([loadCategories(), loadProducts()]);
-  } catch (error) {
-    if (!guard(error)) toast(error.message);
-  }
+    const g = await data.saveAddonGroup(S.editG, {
+      name,
+      required: $('#gReq').checked,
+      active: $('#gActive').checked,
+      min_choices: Math.max(0, Number($('#gMin').value) || 0),
+      max_choices: Math.max(1, Number($('#gMax').value) || 1),
+    });
+
+    const original = S.groups.find((x) => x.id === g.id)?.addons || [];
+    const keep = new Set(items.filter((a) => a.id).map((a) => a.id));
+    for (const old of original) if (!keep.has(old.id)) await data.deleteAddon(old.id);
+    for (const [i, a] of items.entries()) {
+      await data.saveAddon(a.id || null, {
+        group_id: g.id, name: a.name, price_cents: a.price_cents, active: true, sort_order: i + 1,
+      });
+    }
+
+    closeSheets();
+    toast('Grupo salvo.', 'ok');
+    await loadGroups();
+  } catch (err) { if (!guard(err)) showAlert('#gErr', err.message); }
 }
 
-/* ------------------------------------------------------------ configurações */
+async function delGroup(id) {
+  const g = S.groups.find((x) => x.id === id);
+  if (!g || !confirm(`Excluir o grupo "${g.name}" e seus itens?`)) return;
+  try { await data.deleteAddonGroup(id); toast('Grupo excluído.', 'ok'); await loadGroups(); }
+  catch (err) { oops(err); }
+}
+
+/* ---------------------------------------------------------- configurações */
 
 async function loadSettings() {
-  try {
-    state.settings = await data.getSettings();
-    renderSettings();
-  } catch (error) {
-    if (!guard(error)) toast(error.message);
-  }
+  try { S.settings = await data.getSettings(); renderSettings(); } catch (err) { oops(err); }
 }
 
 function renderSettings() {
-  const settings = state.settings;
-  $('#storeName').value = settings.store_name;
-  $('#storeTagline').value = settings.tagline;
-  $('#storeAddress').value = settings.address;
-  $('#storeNotice').value = settings.notice;
-  $('#storeWhats').value = maskPhone(String(settings.whatsapp).replace(/^55/, ''));
-  $('#leadMinutes').value = settings.lead_minutes;
-  $('#slotMinutes').value = settings.slot_minutes;
-  $('#maxDays').value = settings.max_days_ahead;
-  $('#minOrder').value = (settings.min_order_cents / 100).toFixed(2).replace('.', ',');
+  const s = S.settings;
+  $('#sName').value = s.store_name;
+  $('#sHead').value = s.headline;
+  $('#sAddr').value = s.address;
+  $('#sInsta').value = s.instagram;
+  $('#sPrep').value = s.prep_time_note;
+  $('#sWhats').value = maskPhone(String(s.whatsapp).replace(/^55/, ''));
+  $('#ann').value = s.announcement;
+  $('#annOn').checked = s.announcement_active;
+  $('#accepting').checked = s.accepting_orders;
+  $('#acceptingL').textContent = s.accepting_orders ? 'Aceitando pedidos' : 'Pedidos pausados';
+  $('#closedMsg').value = s.closed_message;
+  $('#lead').value = s.lead_minutes;
+  $('#slot').value = s.slot_minutes;
+  $('#days').value = s.max_days_ahead;
+  $('#minOrder').value = (s.min_order_cents / 100).toFixed(2).replace('.', ',');
+  $('#cPrimary').value = s.primary_color || PADRAO.primary;
+  $('#cAccent').value = s.accent_color || PADRAO.accent;
+  S.logo = s.logo_url || '';
+  $('#logoPrev').innerHTML = S.logo ? `<img src="${escapeHtml(S.logo)}" alt="">` : '🥟';
+  $('#logoDel').hidden = !S.logo;
 
-  $('#hoursGrid').innerHTML = WEEKDAYS.map((day, index) => {
-    const config = settings.hours?.[index] || { open: '18:00', close: '22:30', closed: true };
+  $('#hours').innerHTML = DIAS.map((d, i) => {
+    const h = s.hours?.[i] || { open: '18:00', close: '22:30', closed: true };
     return `
-      <div class="hours-row ${config.closed ? 'is-closed' : ''}" data-day="${index}">
-        <span class="hours-row__day">${day}</span>
-        <input class="input" type="time" data-open="${index}" value="${config.open}">
-        <input class="input" type="time" data-close="${index}" value="${config.close}">
-        <label class="switch">
-          <input type="checkbox" data-open-day="${index}" ${config.closed ? '' : 'checked'}>
-          <span class="switch__track"></span>
-          <span>${config.closed ? 'Fechado' : 'Aberto'}</span>
-        </label>
+      <div class="hrow ${h.closed ? 'closed' : ''}" data-d="${i}">
+        <span class="hrow__d">${d}</span>
+        <input class="in" type="time" data-o="${i}" value="${h.open}" aria-label="Abre">
+        <input class="in" type="time" data-c="${i}" value="${h.close}" aria-label="Fecha">
+        <label class="sw"><input type="checkbox" data-od="${i}" ${h.closed ? '' : 'checked'}>
+          <span class="sw__t"></span><span>${h.closed ? 'Fechado' : 'Aberto'}</span></label>
       </div>`;
   }).join('');
 }
 
 function collectHours() {
-  const hours = {};
-  for (const row of $$('.hours-row')) {
-    const index = row.dataset.day;
-    hours[index] = {
-      open: $(`[data-open="${index}"]`, row).value || '18:00',
-      close: $(`[data-close="${index}"]`, row).value || '22:30',
-      closed: !$(`[data-open-day="${index}"]`, row).checked,
+  const out = {};
+  for (const row of $$('.hrow')) {
+    const i = row.dataset.d;
+    out[i] = {
+      open: $(`[data-o="${i}"]`, row).value || '18:00',
+      close: $(`[data-c="${i}"]`, row).value || '22:30',
+      closed: !$(`[data-od="${i}"]`, row).checked,
     };
   }
-  return hours;
+  return out;
 }
 
-async function saveSettings(event) {
-  event.preventDefault();
-  const button = $('#saveSettingsBtn');
-  hideAlert('#settingsOk');
-  hideAlert('#settingsError');
+async function saveSettings(e) {
+  e.preventDefault();
+  const btn = $('#setBtn');
+  hideAlert('#setOk'); hideAlert('#setErr');
 
-  const whatsappDigits = onlyDigits($('#storeWhats').value);
-  if (whatsappDigits.length < 10) {
-    return showAlert('#settingsError', 'Informe o WhatsApp com DDD, por exemplo (15) 99736-5401.');
-  }
+  const wa = onlyDigits($('#sWhats').value);
+  if (wa.length < 10) return showAlert('#setErr', 'Informe o WhatsApp com DDD, por exemplo (15) 99736-5401.');
 
-  const minOrder = $('#minOrder').value.trim() === '' ? 0 : parseMoney($('#minOrder').value);
-  if (!Number.isFinite(minOrder) || minOrder < 0) {
-    return showAlert('#settingsError', 'Informe um pedido mínimo válido, por exemplo 20,00.');
-  }
+  const min = $('#minOrder').value.trim() === '' ? 0 : parseMoney($('#minOrder').value);
+  if (!Number.isFinite(min) || min < 0) return showAlert('#setErr', 'Pedido mínimo inválido.');
 
-  button.disabled = true;
-  button.textContent = 'Salvando…';
-
+  btn.disabled = true; btn.textContent = 'Salvando…';
   try {
-    state.settings = await data.saveSettings({
-      store_name: $('#storeName').value.trim(),
-      tagline: $('#storeTagline').value.trim(),
-      address: $('#storeAddress').value.trim(),
-      notice: $('#storeNotice').value.trim(),
-      whatsapp: whatsappDigits.startsWith('55') ? whatsappDigits : `55${whatsappDigits}`,
-      lead_minutes: $('#leadMinutes').value,
-      slot_minutes: $('#slotMinutes').value,
-      max_days_ahead: $('#maxDays').value,
-      min_order_cents: String(minOrder),
+    S.settings = await data.saveSettings({
+      store_name: $('#sName').value.trim(),
+      headline: $('#sHead').value.trim(),
+      address: $('#sAddr').value.trim(),
+      instagram: $('#sInsta').value.trim().replace(/^@/, ''),
+      prep_time_note: $('#sPrep').value.trim(),
+      whatsapp: wa.startsWith('55') ? wa : `55${wa}`,
+      announcement: $('#ann').value.trim(),
+      announcement_active: $('#annOn').checked,
+      accepting_orders: $('#accepting').checked,
+      closed_message: $('#closedMsg').value.trim(),
+      lead_minutes: Number($('#lead').value) || 0,
+      slot_minutes: Number($('#slot').value) || 15,
+      max_days_ahead: Number($('#days').value) || 7,
+      min_order_cents: min,
       hours: collectHours(),
     });
     renderSettings();
-    showAlert('#settingsOk');
-    toast('Configurações salvas.');
-  } catch (error) {
-    if (!guard(error)) showAlert('#settingsError', error.message);
+    showAlert('#setOk');
+    toast('Configurações salvas.', 'ok');
+  } catch (err) {
+    if (!guard(err)) showAlert('#setErr', err.message);
   } finally {
-    button.disabled = false;
-    button.textContent = 'Salvar configurações';
+    btn.disabled = false; btn.textContent = 'Salvar';
   }
 }
 
-/* -------------------------------------------------------------------- senha */
+/* ------------------------------------------------------------- aparência */
 
-async function changePassword(event) {
-  event.preventDefault();
-  hideAlert('#passwordError');
-  hideAlert('#passwordOk');
+/** Luminância relativa — impede escolher cor clara demais para texto branco. */
+function contrastOk(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex).trim());
+  if (!m) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16) / 255)
+    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return (1.05 / (lum + 0.05)) >= 3.2;   // contraste mínimo com branco
+}
 
-  const current = $('#currentPassword').value;
-  const next = $('#newPassword').value;
+async function saveVisual(e) {
+  e.preventDefault();
+  hideAlert('#visOk'); hideAlert('#visErr');
 
-  if (next.length < 6) return showAlert('#passwordError', 'A nova senha precisa ter pelo menos 6 caracteres.');
-  if (next !== $('#confirmPassword').value) return showAlert('#passwordError', 'As senhas não conferem.');
-
+  const primary = $('#cPrimary').value;
+  if (!contrastOk(primary)) {
+    return showAlert('#visErr', 'Essa cor principal é clara demais: o texto branco em cima dela ficaria ilegível. Escolha um tom mais escuro.');
+  }
   try {
-    await data.changePassword(current, next);
-    $('#passwordForm').reset();
-    showAlert('#passwordOk');
-  } catch (error) {
-    showAlert('#passwordError', error.message);
-  }
+    S.settings = await data.saveSettings({
+      primary_color: primary,
+      accent_color: $('#cAccent').value,
+      logo_url: S.logo,
+    });
+    showAlert('#visOk');
+    toast('Aparência salva.', 'ok');
+  } catch (err) { if (!guard(err)) showAlert('#visErr', err.message); }
 }
 
-/* ------------------------------------------------------------------ helpers */
+/* ----------------------------------------------------------------- senha */
 
-function showAlert(selector, message) {
-  const el = $(selector);
-  if (message) el.textContent = message;
-  el.classList.add('is-visible');
+async function changePw(e) {
+  e.preventDefault();
+  hideAlert('#pwErr'); hideAlert('#pwOk');
+  const cur = $('#pwCur').value, next = $('#pwNew').value;
+  if (next.length < 6) return showAlert('#pwErr', 'A nova senha precisa ter pelo menos 6 caracteres.');
+  if (next !== $('#pwRep').value) return showAlert('#pwErr', 'As senhas não conferem.');
+  try {
+    await data.changePassword(cur, next);
+    $('#pwForm').reset();
+    showAlert('#pwOk');
+  } catch (err) { showAlert('#pwErr', err.message); }
+}
+
+/* ----------------------------------------------------------------- apoio */
+
+function showAlert(sel, msg) {
+  const el = $(sel);
+  if (msg) el.textContent = msg;
+  el.classList.add('is-on');
   el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
+const hideAlert = (sel) => $(sel).classList.remove('is-on');
 
-const hideAlert = (selector) => $(selector).classList.remove('is-visible');
-
-function openModal(selector) {
-  $(selector).classList.add('is-open');
-  document.body.classList.add('no-scroll');
+function openSheet(sel) {
+  $$('.sheet').forEach((s) => { s.classList.remove('is-on'); s.setAttribute('aria-hidden', 'true'); });
+  $(sel).classList.add('is-on');
+  $(sel).setAttribute('aria-hidden', 'false');
+  $('#scrim').classList.add('is-on');
+  document.body.classList.add('sheet-open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSheets() {
+  $$('.sheet').forEach((s) => { s.classList.remove('is-on'); s.setAttribute('aria-hidden', 'true'); });
+  $('#scrim').classList.remove('is-on');
+  document.body.classList.remove('sheet-open');
+  document.body.style.overflow = '';
 }
 
-function closeModal(selector) {
-  $(selector).classList.remove('is-open');
-  document.body.classList.remove('no-scroll');
-}
+/* --------------------------------------------------------------- eventos */
 
-/* ------------------------------------------------------------------ eventos */
+function bind() {
+  $('#loginForm').addEventListener('submit', doLogin);
+  $('#logout').addEventListener('click', async () => { await data.signOut().catch(() => {}); location.reload(); });
+  $('#scrim').addEventListener('click', closeSheets);
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeSheets(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheets(); });
 
-function bindEvents() {
-  $('#loginForm').addEventListener('submit', handleLogin);
-  $('#logoutBtn').addEventListener('click', handleLogout);
+  $('#nav').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-p]');
+    if (!b) return;
+    $$('.nav__b').forEach((x) => x.classList.toggle('is-on', x === b));
+    $$('.pane').forEach((p) => p.classList.toggle('is-on', p.dataset.pane === b.dataset.p));
+    if (b.dataset.p === 'pedidos') loadOrders();
+    if (b.dataset.p === 'home') loadHome();
+    window.scrollTo({ top: 0 });
+  });
 
-  $$('.tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      $$('.tab').forEach((item) => item.classList.toggle('is-active', item === tab));
-      $$('.panel').forEach((panel) =>
-        panel.classList.toggle('is-active', panel.dataset.panel === tab.dataset.tab)
-      );
-    });
+  // Pedidos
+  let ot;
+  $('#oSearch').addEventListener('input', () => { clearTimeout(ot); ot = setTimeout(loadOrders, 260); });
+  $('#oStatus').addEventListener('change', loadOrders);
+  document.addEventListener('click', (e) => {
+    const open = e.target.closest('[data-open]');
+    if (open) return openOrder(Number(open.dataset.open));
+    const st = e.target.closest('[data-st]');
+    if (st) return changeStatus(Number(st.dataset.oid), st.dataset.st);
   });
 
   // Produtos
-  $('#newProductBtn').addEventListener('click', () => openProductModal());
-  $('#productSearch').addEventListener('input', renderProducts);
-  $('#productFilter').addEventListener('change', renderProducts);
-  $('#productForm').addEventListener('submit', saveProduct);
-
-  $('#productList').addEventListener('click', (event) => {
-    const edit = event.target.closest('[data-edit]');
-    if (edit) return openProductModal(state.products.find((p) => p.id === Number(edit.dataset.edit)));
-    const remove = event.target.closest('[data-delete]');
-    if (remove) return deleteProduct(Number(remove.dataset.delete));
+  $('#newProduct').addEventListener('click', () => openProduct());
+  $('#pSearch').addEventListener('input', renderProducts);
+  $('#pFilter').addEventListener('change', renderProducts);
+  $('#pForm').addEventListener('submit', saveProduct);
+  $('#products').addEventListener('click', (e) => {
+    const ed = e.target.closest('[data-edit]');
+    if (ed) return openProduct(S.products.find((p) => p.id === Number(ed.dataset.edit)));
+    const de = e.target.closest('[data-del]');
+    if (de) return delProduct(Number(de.dataset.del));
+  });
+  $('#products').addEventListener('change', (e) => {
+    const av = e.target.closest('[data-av]');
+    if (av) toggleAvail(Number(av.dataset.av), av.checked);
   });
 
-  $('#productList').addEventListener('change', (event) => {
-    const toggle = event.target.closest('[data-toggle]');
-    if (toggle) toggleProduct(Number(toggle.dataset.toggle), toggle.checked);
+  // Adicionais vinculados dentro da folha de produto
+  $('#pGroups').addEventListener('click', (e) => {
+    const l = e.target.closest('.aopt');
+    if (!l) return;
+    e.preventDefault();
+    const on = !l.classList.contains('is-on');
+    l.classList.toggle('is-on', on);
+    l.querySelector('input').checked = on;
   });
 
-  // Foto
-  $('#pickImageBtn').addEventListener('click', () => $('#imageInput').click());
-  $('#imageInput').addEventListener('change', (event) => uploadImage(event.target.files?.[0]));
-  $('#removeImageBtn').addEventListener('click', () => {
-    state.pendingImage = '';
-    renderImagePreview();
+  // Fotos
+  $('#pPick').addEventListener('click', () => $('#pFile').click());
+  $('#pFile').addEventListener('change', (e) =>
+    upload(e.target.files?.[0], (url) => { S.pImage = url; previewImage(); }, '#pPick', '#pErr')
+      .finally(() => { $('#pFile').value = ''; }));
+  $('#pDel').addEventListener('click', () => { S.pImage = ''; previewImage(); });
+
+  $('#logoPick').addEventListener('click', () => $('#logoFile').click());
+  $('#logoFile').addEventListener('change', (e) =>
+    upload(e.target.files?.[0], (url) => {
+      S.logo = url;
+      $('#logoPrev').innerHTML = `<img src="${escapeHtml(url)}" alt="">`;
+      $('#logoDel').hidden = false;
+    }, '#logoPick', '#visErr').finally(() => { $('#logoFile').value = ''; }));
+  $('#logoDel').addEventListener('click', () => {
+    S.logo = ''; $('#logoPrev').innerHTML = '🥟'; $('#logoDel').hidden = true;
   });
 
   // Categorias
-  $('#newCategoryBtn').addEventListener('click', () => openCategoryModal());
-  $('#categoryForm').addEventListener('submit', saveCategory);
-
-  $('#categoryList').addEventListener('click', (event) => {
-    const edit = event.target.closest('[data-edit-cat]');
-    if (edit) return openCategoryModal(state.categories.find((c) => c.id === Number(edit.dataset.editCat)));
-    const remove = event.target.closest('[data-delete-cat]');
-    if (remove) return deleteCategory(Number(remove.dataset.deleteCat));
+  $('#newCat').addEventListener('click', () => openCat());
+  $('#cForm').addEventListener('submit', saveCat);
+  $('#cats').addEventListener('click', (e) => {
+    const ed = e.target.closest('[data-ec]');
+    if (ed) return openCat(S.cats.find((c) => c.id === Number(ed.dataset.ec)));
+    const de = e.target.closest('[data-dc]');
+    if (de) return delCat(Number(de.dataset.dc));
   });
 
-  // Loja e conta
-  $('#settingsForm').addEventListener('submit', saveSettings);
-  $('#passwordForm').addEventListener('submit', changePassword);
-  $('#storeWhats').addEventListener('input', (event) => {
-    event.target.value = maskPhone(event.target.value);
+  // Grupos de adicionais
+  $('#newGroup').addEventListener('click', () => openGroup());
+  $('#gForm').addEventListener('submit', saveGroup);
+  $('#groups').addEventListener('click', (e) => {
+    const ed = e.target.closest('[data-eg]');
+    if (ed) return openGroup(S.groups.find((g) => g.id === Number(ed.dataset.eg)));
+    const de = e.target.closest('[data-dg]');
+    if (de) return delGroup(Number(de.dataset.dg));
+  });
+  $('#gAddItem').addEventListener('click', () => {
+    S.gItems.push({ name: '', price_cents: 0 });
+    renderGItems();
+  });
+  $('#gItems').addEventListener('click', (e) => {
+    const r = e.target.closest('[data-gr]');
+    if (!r) return;
+    // Preserva o que já foi digitado antes de remover a linha.
+    S.gItems = S.gItems.map((a, i) => ({
+      ...a,
+      name: ($(`[data-gn="${i}"]`)?.value || '').trim(),
+      price_cents: parseMoney($(`[data-gp="${i}"]`)?.value || '0') || 0,
+    })).filter((_, i) => i !== Number(r.dataset.gr));
+    renderGItems();
   });
 
-  $('#hoursGrid').addEventListener('change', (event) => {
-    const toggle = event.target.closest('[data-open-day]');
-    if (!toggle) return;
-    const row = toggle.closest('.hours-row');
-    row.classList.toggle('is-closed', !toggle.checked);
-    toggle.parentElement.querySelector('span:last-child').textContent = toggle.checked ? 'Aberto' : 'Fechado';
+  // Loja
+  $('#setForm').addEventListener('submit', saveSettings);
+  $('#sWhats').addEventListener('input', (e) => { e.target.value = maskPhone(e.target.value); });
+  $('#accepting').addEventListener('change', (e) => {
+    $('#acceptingL').textContent = e.target.checked ? 'Aceitando pedidos' : 'Pedidos pausados';
+  });
+  $('#hours').addEventListener('change', (e) => {
+    const t = e.target.closest('[data-od]');
+    if (!t) return;
+    t.closest('.hrow').classList.toggle('closed', !t.checked);
+    t.parentElement.querySelector('span:last-child').textContent = t.checked ? 'Aberto' : 'Fechado';
   });
 
-  // Fechar modais
-  $$('[data-close]').forEach((el) =>
-    el.addEventListener('click', () => closeModal(`#${el.dataset.close}Modal`))
-  );
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    closeModal('#productModal');
-    closeModal('#categoryModal');
+  // Aparência e conta
+  $('#visForm').addEventListener('submit', saveVisual);
+  $('#resetColors').addEventListener('click', () => {
+    $('#cPrimary').value = PADRAO.primary;
+    $('#cAccent').value = PADRAO.accent;
   });
+  $('#pwForm').addEventListener('submit', changePw);
 }
