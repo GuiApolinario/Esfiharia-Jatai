@@ -1,25 +1,23 @@
 -- =============================================================================
---  CARDÁPIO REAL — DISK ESFIHA JATAÍ
+--  CARDÁPIO COMPLETO — DISK ESFIHA JATAÍ
 --
 --  COMO USAR:
 --    SQL Editor > New query > cole este arquivo > Run
 --
 --  O que ele faz:
---    1. Corrige o nome da loja para "Disk Esfiha Jataí"
---    2. Remove os produtos e categorias que vieram como EXEMPLO
---       (só os de exemplo, pelo nome — o que você cadastrou fica intacto)
---    3. Cadastra as 9 esfihas salgadas a R$ 4,20
---    4. Cria o grupo de adicionais a R$ 1,30 e liga em todas as salgadas
+--    1. Ajusta o nome da loja
+--    2. Remove os itens que vieram como EXEMPLO (só eles, pelo nome)
+--    3. Cadastra as 6 categorias e os 33 itens do cardápio impresso
+--    4. Cria os adicionais a R$ 1,30 e os sabores dos sucos
 --
---  Pode rodar mais de uma vez: nada é duplicado.
---  Pedidos antigos não são afetados: eles guardam nome e preço próprios.
+--  Pode rodar mais de uma vez: atualiza o que existe, não duplica.
+--  Pedidos antigos não mudam: eles guardam nome e preço próprios.
 -- =============================================================================
 
--- ----------------------------------------------------------------- 1. nome
 update public.settings set value = 'Disk Esfiha Jataí' where key = 'store_name';
 
 
--- ------------------------------------------------- 2. limpa o que era exemplo
+-- ------------------------------------------------- 1. limpa o que era exemplo
 do $limpa$
 declare
   exemplos text[] := array[
@@ -35,11 +33,7 @@ declare
   ];
 begin
   delete from public.products where name = any(exemplos);
-
-  -- Grupos de adicionais que vieram de exemplo
   delete from public.addon_groups where name in ('Adicione um extra', 'Molho para acompanhar');
-
-  -- Categorias de exemplo que ficaram sem nenhum produto
   delete from public.categories c
    where c.name in ('Esfihas Salgadas','Esfihas Especiais','Esfihas Doces','Bebidas','Acompanhamentos')
      and not exists (select 1 from public.products p where p.category_id = c.id);
@@ -47,84 +41,144 @@ end;
 $limpa$;
 
 
--- ------------------------------------------------- 3. cardápio de verdade
+-- --------------------------------------------------------- 2. o cardápio real
 do $cardapio$
 declare
-  c_salgadas bigint;
-  g_add      bigint;
-  p_id       bigint;
-  r          record;
+  g_add   bigint;   -- adicionais das esfihas
+  g_suco  bigint;   -- sabor: laranja ou uva
+  g_caixa bigint;   -- sabor: abacaxi ou uva
+  c_id    bigint;
+  p_id    bigint;
+  r       record;
 begin
-  ---------------------------------------------------------------- categoria
-  select id into c_salgadas from public.categories where name = 'Salgadas';
-  if c_salgadas is null then
-    insert into public.categories (name, icon, sort_order, active)
-    values ('Salgadas', '🥟', 1, true) returning id into c_salgadas;
-  end if;
+  ------------------------------------------------------------------ categorias
+  for r in select * from (values
+    ('Salgadas',            '🥟', 1),
+    ('Doces',               '🍫', 2),
+    ('Refrigerantes 2L',    '🥤', 3),
+    ('Refrigerantes Lata',  '🥫', 4),
+    ('Cervejas',            '🍺', 5),
+    ('Sucos',               '🧃', 6)
+  ) as t(nome, icone, ordem) loop
+    if not exists (select 1 from public.categories where name = r.nome) then
+      insert into public.categories (name, icon, sort_order, active)
+      values (r.nome, r.icone, r.ordem, true);
+    else
+      update public.categories set icon = r.icone, sort_order = r.ordem, active = true
+       where name = r.nome;
+    end if;
+  end loop;
 
-  ---------------------------------------------------------------- adicionais
+  ----------------------------------------------------------------- adicionais
   select id into g_add from public.addon_groups where name = 'Adicionais';
   if g_add is null then
     insert into public.addon_groups (name, required, min_choices, max_choices, sort_order, active)
     values ('Adicionais', false, 0, 4, 1, true) returning id into g_add;
   end if;
-
-  -- R$ 1,30 cada, conforme o cardápio
   insert into public.addons (group_id, name, price_cents, sort_order, active)
   select g_add, v.nome, 130, v.ordem, true
-    from (values ('Queijo',1), ('Cheddar',2), ('Bacon',3), ('Catupiry',4)) as v(nome, ordem)
-   where not exists (
-     select 1 from public.addons a where a.group_id = g_add and a.name = v.nome);
+    from (values ('Queijo',1),('Cheddar',2),('Bacon',3),('Catupiry',4)) as v(nome, ordem)
+   where not exists (select 1 from public.addons a where a.group_id = g_add and a.name = v.nome);
 
-  ---------------------------------------------------------------- as esfihas
-  -- Todas a R$ 4,20. As três primeiras entram como destaque ("Mais pedidos").
-  for r in
-    select * from (values
-      ('Queijo',     'Muçarela e orégano',                                        1, true),
-      ('Pizza',      'Muçarela, presunto e tomate',                               2, true),
-      ('Carne',      'Carne moída',                                               3, true),
-      ('Carne Seca', 'Carne seca desfiada',                                       4, false),
-      ('Frango',     'Frango desfiado',                                           5, false),
-      ('Toscana',    'Linguiça fresca moída',                                     6, false),
-      ('Calabresa',  'Linguiça calabresa moída',                                  7, false),
-      ('Cachorrão',  'Linguiça calabresa, tomate, milho, salsicha e ketchup',     8, false),
-      ('Milho',      'Muçarela e milho',                                          9, false)
-    ) as t(nome, descricao, ordem, destaque)
+  -- Sabores dos sucos: escolha obrigatória, sem custo extra.
+  select id into g_suco from public.addon_groups where name = 'Sabor do suco';
+  if g_suco is null then
+    insert into public.addon_groups (name, required, min_choices, max_choices, sort_order, active)
+    values ('Sabor do suco', true, 1, 1, 2, true) returning id into g_suco;
+  end if;
+  insert into public.addons (group_id, name, price_cents, sort_order, active)
+  select g_suco, v.nome, 0, v.ordem, true
+    from (values ('Laranja',1),('Uva',2)) as v(nome, ordem)
+   where not exists (select 1 from public.addons a where a.group_id = g_suco and a.name = v.nome);
+
+  select id into g_caixa from public.addon_groups where name = 'Sabor da caixa';
+  if g_caixa is null then
+    insert into public.addon_groups (name, required, min_choices, max_choices, sort_order, active)
+    values ('Sabor da caixa', true, 1, 1, 3, true) returning id into g_caixa;
+  end if;
+  insert into public.addons (group_id, name, price_cents, sort_order, active)
+  select g_caixa, v.nome, 0, v.ordem, true
+    from (values ('Abacaxi',1),('Uva',2)) as v(nome, ordem)
+   where not exists (select 1 from public.addons a where a.group_id = g_caixa and a.name = v.nome);
+
+  ------------------------------------------------------------------- produtos
+  -- categoria, nome, descrição, centavos, unidade, ordem, destaque, grupo extra
+  for r in select * from (values
+    -- SALGADAS a R$ 4,20
+    ('Salgadas','Queijo',            'Muçarela e orégano',                                    420,'unidade', 1, true,  'add'),
+    ('Salgadas','Pizza',             'Muçarela, presunto e tomate',                           420,'unidade', 2, true,  'add'),
+    ('Salgadas','Carne',             'Carne moída',                                           420,'unidade', 3, true,  'add'),
+    ('Salgadas','Carne Seca',        'Carne seca desfiada',                                   420,'unidade', 4, false, 'add'),
+    ('Salgadas','Frango',            'Frango desfiado',                                       420,'unidade', 5, false, 'add'),
+    ('Salgadas','Toscana',           'Linguiça fresca moída',                                 420,'unidade', 6, false, 'add'),
+    ('Salgadas','Calabresa',         'Linguiça calabresa moída',                              420,'unidade', 7, false, 'add'),
+    ('Salgadas','Cachorrão',         'Linguiça calabresa, tomate, milho, salsicha e ketchup', 420,'unidade', 8, false, 'add'),
+    ('Salgadas','Milho',             'Muçarela e milho',                                      420,'unidade', 9, false, 'add'),
+    -- SALGADAS especiais
+    ('Salgadas','Queijo com Alho',   'Muçarela, orégano e alho frito',                        550,'unidade',10, false, 'add'),
+    ('Salgadas','Queijo com Bacon',  'Muçarela, orégano e bacon',                             550,'unidade',11, false, 'add'),
+    ('Salgadas','Brócolis',          'Muçarela, orégano e brócolis',                          550,'unidade',12, false, 'add'),
+    ('Salgadas','Burguer Esfiha',    'Pizza, 1 hambúrguer, catupiry e tomate',                600,'unidade',13, false, 'add'),
+    -- DOCES a R$ 5,50
+    ('Doces','Chocolate',            'Chocolate ao leite com granulado',                      550,'unidade',14, false, 'add'),
+    ('Doces','Doce de Leite',        'Doce de leite',                                         550,'unidade',15, false, 'add'),
+    ('Doces','Brigadeiro',           'Brigadeiro com cereais preto e branco',                 550,'unidade',16, false, 'add'),
+    ('Doces','Goiabada',             'Muçarela e goiabada',                                   550,'unidade',17, false, 'add'),
+    -- REFRIGERANTES 2 LITROS
+    ('Refrigerantes 2L','Coca-Cola 2L',          '', 1400,'garrafa 2L',18, false, ''),
+    ('Refrigerantes 2L','Fanta Uva 2L',          '', 1200,'garrafa 2L',19, false, ''),
+    ('Refrigerantes 2L','Fanta Laranja 2L',      '', 1200,'garrafa 2L',20, false, ''),
+    ('Refrigerantes 2L','Guaraná Antártica 2L',  '', 1200,'garrafa 2L',21, false, ''),
+    ('Refrigerantes 2L','Sprite 2L',             '', 1200,'garrafa 2L',22, false, ''),
+    ('Refrigerantes 2L','Vedete Guaraná 2L',     '',  600,'garrafa 2L',23, false, ''),
+    ('Refrigerantes 2L','Vedete Taubaina 2L',    '',  600,'garrafa 2L',24, false, ''),
+    -- LATAS
+    ('Refrigerantes Lata','Coca-Cola Lata',      '',  500,'lata',      25, false, ''),
+    ('Refrigerantes Lata','Sprite Lata',         '',  500,'lata',      26, false, ''),
+    ('Refrigerantes Lata','Fanta Laranja Lata',  '',  500,'lata',      27, false, ''),
+    -- CERVEJAS
+    ('Cervejas','Brahma Lata', 'Venda proibida para menores de 18 anos.', 500,'lata',28, false, ''),
+    ('Cervejas','Skol Lata',   'Venda proibida para menores de 18 anos.', 500,'lata',29, false, ''),
+    -- SUCOS DELL VALLE
+    ('Sucos','Dell Valle Garrafa 450ml', 'Escolha o sabor: laranja ou uva.',   350,'garrafa 450ml',30, false, 'suco'),
+    ('Sucos','Dell Valle Garrafa 1 Litro','Escolha o sabor: laranja ou uva.',  450,'garrafa 1L',   31, false, 'suco'),
+    ('Sucos','Dell Valle Caixa 1 Litro',  'Escolha o sabor: abacaxi ou uva.',  900,'caixa 1L',     32, false, 'caixa')
+  ) as t(categoria, nome, descricao, centavos, unidade, ordem, destaque, extras)
   loop
-    select id into p_id from public.products where name = r.nome;
+    select id into c_id from public.categories where name = r.categoria;
+    select id into p_id from public.products   where name = r.nome;
 
     if p_id is null then
       insert into public.products
         (category_id, name, description, price_cents, unit, sort_order, featured, available)
       values
-        (c_salgadas, r.nome, r.descricao, 420, 'unidade', r.ordem, r.destaque, true)
+        (c_id, r.nome, r.descricao, r.centavos, r.unidade, r.ordem, r.destaque, true)
       returning id into p_id;
     else
       update public.products
-         set category_id = c_salgadas,
-             description  = r.descricao,
-             price_cents  = 420,
-             sort_order   = r.ordem,
-             featured     = r.destaque,
-             available    = true,
-             updated_at   = now()
+         set category_id = c_id, description = r.descricao, price_cents = r.centavos,
+             unit = r.unidade, sort_order = r.ordem, featured = r.destaque,
+             available = true, updated_at = now()
        where id = p_id;
     end if;
 
-    -- Toda salgada oferece os adicionais
-    insert into public.product_addon_groups (product_id, group_id)
-    values (p_id, g_add)
-    on conflict do nothing;
+    -- Refaz os vínculos de adicionais deste produto
+    delete from public.product_addon_groups where product_id = p_id;
+    if r.extras = 'add' then
+      insert into public.product_addon_groups (product_id, group_id) values (p_id, g_add);
+    elsif r.extras = 'suco' then
+      insert into public.product_addon_groups (product_id, group_id) values (p_id, g_suco);
+    elsif r.extras = 'caixa' then
+      insert into public.product_addon_groups (product_id, group_id) values (p_id, g_caixa);
+    end if;
   end loop;
 end;
 $cardapio$;
 
 
--- ------------------------------------------------------------- 4. conferência
-select 'Loja'        as item, value                         as valor from public.settings where key = 'store_name'
-union all
-select 'Categorias',  count(*)::text from public.categories
-union all
-select 'Produtos',    count(*)::text from public.products
-union all
-select 'Adicionais',  count(*)::text from public.addons;
+-- ------------------------------------------------------------- 3. conferência
+select c.name as categoria, count(p.id) as itens,
+       'R$ ' || to_char(min(p.price_cents)/100.0,'FM990D00') ||
+       ' a R$ ' || to_char(max(p.price_cents)/100.0,'FM990D00') as faixa
+  from public.categories c left join public.products p on p.category_id = c.id
+ group by c.name, c.sort_order order by c.sort_order;
