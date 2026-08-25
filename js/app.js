@@ -9,7 +9,7 @@ import { $, $$, escapeHtml, isValidPhone, maskPhone, money, toast } from './util
 import { fetchCatalog, createOrder } from './data.js';
 import * as cart from './cart.js';
 import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, WEEKDAYS } from './schedule.js';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js';
 
 const state = {
   store: null,
@@ -147,12 +147,15 @@ function renderStore() {
     $('#ftInstaLink').textContent = `@${handle}`;
   }
 
-  $('#ftHours').innerHTML = WEEKDAYS.map((name, i) => {
-    const h = s.hours?.[i];
-    const v = !h || h.closed ? 'Fechado' : `${h.open} – ${h.close}`;
-    const today = i === new Date().getDay() ? ' style="color:#fff"' : '';
-    return `<li class="ft__r"${today}><span>${name}</span><b>${v}</b></li>`;
-  }).join('');
+  const todayKey = dateKey(new Date());
+  const upcoming = [...(s.event_days || [])].sort((a, b) => a.date.localeCompare(b.date));
+  $('#ftHours').innerHTML = upcoming.length ? upcoming.map((ev) => {
+    const [y, m, d] = ev.date.split('-').map(Number);
+    const dow = WEEKDAYS[new Date(y, m - 1, d).getDay()];
+    const label = `${dow}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+    const today = ev.date === todayKey ? ' style="color:#fff"' : '';
+    return `<li class="ft__r"${today}><span>${label}</span><b>${ev.open} – ${ev.close}</b></li>`;
+  }).join('') : '<li class="ft__r"><span>Nenhum evento agendado no momento.</span></li>';
 
   if (s.announcement_active && s.announcement) {
     $('#noticeSlot').innerHTML =

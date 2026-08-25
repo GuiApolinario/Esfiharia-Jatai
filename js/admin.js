@@ -7,7 +7,6 @@ import { $, $$, dateTimeBR, escapeHtml, maskPhone, money, onlyDigits, parseMoney
 import { isConfigured, SETUP_MESSAGE } from './supabase.js';
 import * as data from './data.js';
 
-const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
 const S = {
@@ -16,6 +15,7 @@ const S = {
   cats: [],
   groups: [],
   orders: [],
+  listOrders: [],
   settings: null,
   editP: null,
   editC: null,
@@ -23,6 +23,7 @@ const S = {
   pImage: '',
   logo: '',
   gItems: [],
+  eventDays: [],
 };
 
 boot();
@@ -184,6 +185,85 @@ function openOrder(id) {
     </div>`;
 
   openSheet('#oSheet');
+}
+
+/** "2x Esfiha de Carne (+ Catupiry); 1x Água Mineral 500ml" */
+function orderItemsSummary(o) {
+  return (o.order_items || [])
+    .map((i) => `${i.quantity}x ${i.product_name_snapshot}${(i.order_item_addons || []).length
+      ? ` (+ ${i.order_item_addons.map((a) => a.addon_name_snapshot).join(', ')})` : ''}`)
+    .join('; ');
+}
+
+async function openOrdersList() {
+  try {
+    S.listOrders = await data.listOrders({ status: $('#oStatus').value, search: $('#oSearch').value, limit: 5000 });
+    renderOrdersList();
+    openSheet('#lSheet');
+  } catch (err) { oops(err); }
+}
+
+function renderOrdersList() {
+  const rows = S.listOrders;
+  const total = rows.reduce((s, o) => s + o.total_cents, 0);
+  $('#lInfo').textContent = rows.length
+    ? `${rows.length} pedido(s) · total de ${money(total)}`
+    : 'Nenhum pedido encontrado com os filtros atuais.';
+
+  $('#lTable').innerHTML = !rows.length ? '' : `
+    <thead><tr>
+      <th>Código</th><th>Cliente</th><th>Telefone</th><th>Pedido</th>
+      <th>Retirada</th><th>Situação</th><th>Total</th><th>Criado em</th>
+    </tr></thead>
+    <tbody>
+      ${rows.map((o) => `
+        <tr>
+          <td>${escapeHtml(o.public_code)}</td>
+          <td>${escapeHtml(o.customer_name)}</td>
+          <td>${maskPhone(o.customer_phone)}</td>
+          <td>${escapeHtml(orderItemsSummary(o))}</td>
+          <td>${o.pickup_at ? dateTimeBR(o.pickup_at) : '—'}</td>
+          <td>${escapeHtml(o.status)}</td>
+          <td class="money">${money(o.total_cents)}</td>
+          <td>${dateTimeBR(o.created_at)}</td>
+        </tr>`).join('')}
+    </tbody>`;
+}
+
+const csvField = (v) => {
+  const s = String(v ?? '');
+  return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+function downloadOrdersCsv() {
+  const rows = S.listOrders || [];
+  if (!rows.length) return toast('Nenhum pedido para exportar.', 'bad');
+
+  const head = ['Código', 'Cliente', 'Telefone', 'Pedido', 'Retirada', 'Situação', 'Total (R$)', 'Criado em'];
+  const lines = [head.join(';')];
+  for (const o of rows) {
+    lines.push([
+      o.public_code,
+      o.customer_name,
+      maskPhone(o.customer_phone),
+      orderItemsSummary(o),
+      o.pickup_at ? dateTimeBR(o.pickup_at) : '',
+      o.status,
+      (o.total_cents / 100).toFixed(2).replace('.', ','),
+      dateTimeBR(o.created_at),
+    ].map(csvField).join(';'));
+  }
+
+  // BOM no início para o Excel reconhecer acentuação em UTF-8.
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pedidos-jatai-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 async function changeStatus(id, status) {
@@ -538,7 +618,7 @@ function renderSettings() {
   $('#closedMsg').value = s.closed_message;
   $('#lead').value = s.lead_minutes;
   $('#slot').value = s.slot_minutes;
-  $('#days').value = s.max_days_ahead;
+  $('#cutoff').value = s.order_cutoff_days;
   $('#minOrder').value = (s.min_order_cents / 100).toFixed(2).replace('.', ',');
   $('#cPrimary').value = s.primary_color || PADRAO.primary;
   $('#cAccent').value = s.accent_color || PADRAO.accent;
@@ -546,30 +626,28 @@ function renderSettings() {
   $('#logoPrev').innerHTML = S.logo ? `<img src="${escapeHtml(S.logo)}" alt="">` : '🥟';
   $('#logoDel').hidden = !S.logo;
 
-  $('#hours').innerHTML = DIAS.map((d, i) => {
-    const h = s.hours?.[i] || { open: '18:00', close: '22:30', closed: true };
-    return `
-      <div class="hrow ${h.closed ? 'closed' : ''}" data-d="${i}">
-        <span class="hrow__d">${d}</span>
-        <input class="in" type="time" data-o="${i}" value="${h.open}" aria-label="Abre">
-        <input class="in" type="time" data-c="${i}" value="${h.close}" aria-label="Fecha">
-        <label class="sw"><input type="checkbox" data-od="${i}" ${h.closed ? '' : 'checked'}>
-          <span class="sw__t"></span><span>${h.closed ? 'Fechado' : 'Aberto'}</span></label>
-      </div>`;
-  }).join('');
+  S.eventDays = (s.event_days || []).map((d) => ({ ...d }));
+  renderEventDays();
 }
 
-function collectHours() {
-  const out = {};
-  for (const row of $$('.hrow')) {
-    const i = row.dataset.d;
-    out[i] = {
-      open: $(`[data-o="${i}"]`, row).value || '18:00',
-      close: $(`[data-c="${i}"]`, row).value || '22:30',
-      closed: !$(`[data-od="${i}"]`, row).checked,
-    };
-  }
-  return out;
+function renderEventDays() {
+  $('#eventDays').innerHTML = S.eventDays.length ? S.eventDays.map((d, i) => `
+    <div class="erow" data-i="${i}">
+      <input class="in" data-ed="${i}" type="date" value="${d.date || ''}" aria-label="Data do evento">
+      <input class="in" data-eo="${i}" type="time" value="${d.open || '18:00'}" aria-label="Horário de abertura">
+      <input class="in" data-ec="${i}" type="time" value="${d.close || '22:30'}" aria-label="Horário de fechamento">
+      <button class="mini mini--bad" type="button" data-er="${i}" aria-label="Remover dia">✕</button>
+    </div>`).join('')
+    : '<p style="font-size:13px;color:var(--ink-faint);margin:0">Nenhum dia de evento cadastrado ainda.</p>';
+}
+
+/** Lê os campos direto do DOM, para não perder edição não confirmada. */
+function readEventDaysFromDom() {
+  return S.eventDays.map((d, i) => ({
+    date: $(`[data-ed="${i}"]`)?.value || '',
+    open: $(`[data-eo="${i}"]`)?.value || '18:00',
+    close: $(`[data-ec="${i}"]`)?.value || '22:30',
+  }));
 }
 
 async function saveSettings(e) {
@@ -582,6 +660,8 @@ async function saveSettings(e) {
 
   const min = $('#minOrder').value.trim() === '' ? 0 : parseMoney($('#minOrder').value);
   if (!Number.isFinite(min) || min < 0) return showAlert('#setErr', 'Pedido mínimo inválido.');
+
+  const eventDays = readEventDaysFromDom().filter((d) => d.date).sort((a, b) => a.date.localeCompare(b.date));
 
   btn.disabled = true; btn.textContent = 'Salvando…';
   try {
@@ -598,9 +678,9 @@ async function saveSettings(e) {
       closed_message: $('#closedMsg').value.trim(),
       lead_minutes: Number($('#lead').value) || 0,
       slot_minutes: Number($('#slot').value) || 15,
-      max_days_ahead: Number($('#days').value) || 7,
+      order_cutoff_days: Number($('#cutoff').value) || 0,
       min_order_cents: min,
-      hours: collectHours(),
+      event_days: eventDays,
     });
     renderSettings();
     showAlert('#setOk');
@@ -798,12 +878,22 @@ function bind() {
   $('#accepting').addEventListener('change', (e) => {
     $('#acceptingL').textContent = e.target.checked ? 'Aceitando pedidos' : 'Pedidos pausados';
   });
-  $('#hours').addEventListener('change', (e) => {
-    const t = e.target.closest('[data-od]');
-    if (!t) return;
-    t.closest('.hrow').classList.toggle('closed', !t.checked);
-    t.parentElement.querySelector('span:last-child').textContent = t.checked ? 'Aberto' : 'Fechado';
+  $('#addEventDay').addEventListener('click', () => {
+    S.eventDays = readEventDaysFromDom();
+    S.eventDays.push({ date: '', open: '18:00', close: '22:30' });
+    renderEventDays();
   });
+  $('#eventDays').addEventListener('click', (e) => {
+    const r = e.target.closest('[data-er]');
+    if (!r) return;
+    S.eventDays = readEventDaysFromDom().filter((_, i) => i !== Number(r.dataset.er));
+    renderEventDays();
+  });
+
+  // Lista completa de pedidos
+  $('#openList').addEventListener('click', openOrdersList);
+  $('#lPrint').addEventListener('click', () => window.print());
+  $('#lCsv').addEventListener('click', downloadOrdersCsv);
 
   // Aparência e conta
   $('#visForm').addEventListener('submit', saveVisual);

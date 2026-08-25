@@ -139,6 +139,13 @@ Acesse `/admin.html`, informe o e-mail e a senha que você criou no passo 6.
 **Esqueceu a senha?** No Supabase, vá em **Authentication → Users**, clique nos três
 pontinhos ao lado do seu usuário e escolha **Reset password** ou **Send magic link**.
 
+## 🧾 Pedidos
+Veja todos os pedidos recebidos, com nome, telefone, itens, horário de retirada, total
+e situação. Toque em **📋 Lista completa** para abrir uma tabela com todos os pedidos
+(respeitando os filtros de busca e status ativos) e:
+- **🖨️ Imprimir** — abre a tela de impressão só com a lista, pronta para levar para a cozinha
+- **⬇️ Baixar CSV** — baixa uma planilha para abrir no Excel/Google Sheets
+
 ## 🥟 Produtos
 Cadastre esfihas e bebidas com **foto, nome, descrição, preço, unidade de venda e
 categoria**. A foto é reduzida no navegador antes de subir, para o cardápio carregar
@@ -152,12 +159,17 @@ Organizam o cardápio (Esfihas Salgadas, Esfihas Doces, Bebidas…). Cada uma te
 e uma ordem de exibição.
 
 ## 🏪 Loja e horários
+O site é feito para **festivais de esfiha**: em vez de uma agenda semanal fixa, você
+cadastra os dias específicos em que o evento vai acontecer.
+
 - Nome, frase de apresentação, endereço da retirada e aviso no topo do cardápio
 - **WhatsApp que recebe os pedidos**
-- Horário de funcionamento de cada dia da semana (com dias fechados)
+- **Dias do evento** — cada dia com sua própria data, horário de abertura e de fechamento.
+  Só esses dias aparecem para o cliente escolher a retirada.
 - **Tempo mínimo de preparo** — o cliente não consegue marcar um horário antes disso
 - **Intervalo entre horários** — de quantos em quantos minutos aparecem as opções
-- **Antecedência máxima** — até quantos dias à frente dá para agendar
+- **Pedidos até (dias antes do evento)** — quantos dias antes de cada evento os pedidos
+  param de ser aceitos (o padrão é 1: pedidos só até a véspera)
 - **Pedido mínimo** (opcional)
 
 Tudo o que você salva aqui aparece no site na hora, sem precisar publicar de novo.
@@ -169,8 +181,9 @@ Troca a senha do painel.
 
 ## Como chega o pedido
 
-O cliente monta o carrinho, escolhe dia e horário, informa nome e telefone e clica em
-**Enviar pedido pelo WhatsApp**. Abre a conversa com a loja já com a mensagem pronta:
+O cliente monta o carrinho, escolhe o dia do evento e o horário, informa nome e telefone e
+envia o pedido. Assim que o pedido é registrado no sistema, aparece o botão **Acompanhar
+pedido no WhatsApp**, que abre a conversa com a loja já com a mensagem pronta:
 
 ```
 *NOVO PEDIDO — Esfiharia Jataí*

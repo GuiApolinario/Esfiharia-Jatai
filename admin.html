@@ -69,6 +69,7 @@
     <section class="pane" data-pane="pedidos">
       <div class="pane__h">
         <h2>Pedidos</h2>
+        <button class="btn btn--line" id="openList">📋 Lista completa</button>
         <p>Busque pelo código que o cliente mandou no WhatsApp para conferir o valor real.</p>
       </div>
       <div class="bar">
@@ -160,17 +161,19 @@
         </div>
 
         <div class="block">
-          <h3>Horário de funcionamento</h3>
-          <p class="block__s">Só aparecem horários dentro da janela de cada dia.</p>
-          <div id="hours"></div>
+          <h3>Dias do evento</h3>
+          <p class="block__s">Cadastre os dias em que o festival de esfihas vai acontecer, com o horário de cada um. Só esses dias aparecem para retirada no site.</p>
+          <div id="eventDays"></div>
+          <button class="mini" type="button" id="addEventDay" style="margin-top:8px">+ Adicionar dia de evento</button>
         </div>
 
         <div class="block">
           <h3>Regras da retirada</h3>
+          <p class="block__s">Os pedidos param de ser aceitos alguns dias antes de cada evento, para dar tempo de organizar a produção.</p>
           <div class="grid2">
             <div class="f"><label for="lead">Preparo mínimo <span class="f__hint">(min)</span></label><input class="in" id="lead" type="number" min="0" max="480" step="5" required></div>
             <div class="f"><label for="slot">Intervalo entre horários <span class="f__hint">(min)</span></label><input class="in" id="slot" type="number" min="5" max="120" step="5" required></div>
-            <div class="f"><label for="days">Antecedência <span class="f__hint">(dias)</span></label><input class="in" id="days" type="number" min="0" max="30" required></div>
+            <div class="f"><label for="cutoff">Pedidos até <span class="f__hint">(dias antes do evento)</span></label><input class="in" id="cutoff" type="number" min="0" max="30" required></div>
             <div class="f"><label for="minOrder">Pedido mínimo <span class="f__hint">(0 = sem)</span></label><input class="in" id="minOrder" type="text" inputmode="decimal" placeholder="0,00"></div>
           </div>
         </div>
@@ -342,6 +345,20 @@
   <div class="sheet__h"><h2 id="oTitle">Pedido</h2><button class="iconbtn" data-close aria-label="Fechar">✕</button></div>
   <div class="sheet__b" id="oBody"></div>
   <div class="sheet__f" id="oFoot"></div>
+</section>
+
+<!-- ===================== folha: lista completa de pedidos ===================== -->
+<section class="sheet sheet--wide" id="lSheet" role="dialog" aria-modal="true" aria-labelledby="lTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h"><h2 id="lTitle">Lista de pedidos</h2><button class="iconbtn" data-close aria-label="Fechar">✕</button></div>
+  <div class="sheet__b" id="lBody">
+    <p class="block__s" id="lInfo"></p>
+    <div class="tbl-wrap"><table class="tbl" id="lTable"></table></div>
+  </div>
+  <div class="sheet__f" style="display:flex;gap:8px">
+    <button class="btn btn--ghost" type="button" id="lPrint">🖨️ Imprimir</button>
+    <button class="btn btn--brand" type="button" id="lCsv" style="flex:1">⬇️ Baixar CSV</button>
+  </div>
 </section>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

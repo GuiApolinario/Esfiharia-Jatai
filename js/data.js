@@ -26,24 +26,17 @@ export const DEFAULTS = {
   min_order_cents: 0,
   slot_minutes: 15,
   lead_minutes: 30,
-  max_days_ahead: 7,
+  order_cutoff_days: 1,
   primary_color: '#c8102e',
   secondary_color: '#ffffff',
   accent_color: '#f2b233',
   logo_url: '',
   whatsapp_footer: 'Pedido registrado no sistema.',
-  hours: {
-    0: { open: '18:00', close: '22:30', closed: false },
-    1: { open: '18:00', close: '22:30', closed: true },
-    2: { open: '18:00', close: '22:30', closed: false },
-    3: { open: '18:00', close: '22:30', closed: false },
-    4: { open: '18:00', close: '22:30', closed: false },
-    5: { open: '18:00', close: '23:30', closed: false },
-    6: { open: '18:00', close: '23:30', closed: false },
-  },
+  // Dias específicos do festival: [{ date: '2026-09-05', open: '18:00', close: '22:30' }, ...]
+  event_days: [],
 };
 
-const NUMBER_KEYS = ['min_order_cents', 'slot_minutes', 'lead_minutes', 'max_days_ahead'];
+const NUMBER_KEYS = ['min_order_cents', 'slot_minutes', 'lead_minutes', 'order_cutoff_days'];
 const BOOL_KEYS = ['announcement_active', 'accepting_orders', 'pickup_enabled'];
 
 /** Transforma o erro técnico do Supabase em algo que dá para mostrar na tela. */
@@ -81,8 +74,8 @@ function normalize(rows) {
       out[key] = Number.isFinite(n) ? n : fallback;
     } else if (BOOL_KEYS.includes(key)) {
       out[key] = raw[key] === 'true';
-    } else if (key === 'hours') {
-      try { out.hours = JSON.parse(raw.hours); } catch { out.hours = fallback; }
+    } else if (key === 'event_days') {
+      try { out.event_days = JSON.parse(raw.event_days); } catch { out.event_days = fallback; }
     } else {
       out[key] = raw[key];
     }
