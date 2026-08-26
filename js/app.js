@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=3';
-import { fetchCatalog, createOrder } from './data.js?v=3';
-import * as cart from './cart.js?v=3';
-import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js?v=3';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=3';
+import { $, $$, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=4';
+import { fetchCatalog, createOrder } from './data.js?v=4';
+import * as cart from './cart.js?v=4';
+import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js?v=4';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=4';
 
 const state = {
   store: null,
@@ -123,6 +123,10 @@ function renderStore() {
   $('#ftAddr').textContent = s.address || 'Consulte no WhatsApp';
 
   $('#mark').innerHTML = s.logo_url ? `<img src="${escapeHtml(s.logo_url)}" alt="">` : ESFIHA;
+
+  // Com logotipo enviado, ele também vira o ícone da aba do navegador.
+  const favicon = $('#favicon');
+  if (s.logo_url && favicon) favicon.href = s.logo_url;
 
   // Com logotipo enviado, ele substitui o texto na tela de carregamento.
   const splashLogo = $('#splashLogo');
