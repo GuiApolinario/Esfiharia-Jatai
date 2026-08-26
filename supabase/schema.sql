@@ -299,6 +299,10 @@ declare
   v_addons_resumo   jsonb;
   v_minimo          int;
   v_existente       public.orders%rowtype;
+  v_dias_evento     jsonb;
+  v_prazo_dias      int;
+  v_hoje            date;
+  v_dentro_prazo    boolean;
 begin
   -- ---------------------------------------------------------------------
   -- Idempotência: o mesmo token nunca cria dois pedidos, então tocar
@@ -319,6 +323,35 @@ begin
       'status', 'closed',
       'message', public.get_setting('closed_message', 'Não estamos aceitando pedidos no momento.')
     );
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- O site é usado por festivais: a retirada precisa cair num dos dias de
+  -- evento cadastrados, e o pedido precisa estar dentro do prazo (o painel
+  -- define quantos dias antes do evento os pedidos param de ser aceitos).
+  -- Sem dias de evento cadastrados, mantém o comportamento antigo (livre).
+  -- ---------------------------------------------------------------------
+  v_dias_evento := coalesce(nullif(public.get_setting('event_days', '[]'), '')::jsonb, '[]'::jsonb);
+  if jsonb_typeof(v_dias_evento) = 'array' and jsonb_array_length(v_dias_evento) > 0 then
+    if p_pickup_at is null then
+      raise exception 'Escolha o dia e o horário de retirada.' using errcode = 'P0001';
+    end if;
+
+    v_prazo_dias := coalesce(nullif(public.get_setting('order_cutoff_days', '1'), '')::int, 1);
+    v_hoje := (now() at time zone 'America/Sao_Paulo')::date;
+
+    select exists (
+      select 1 from jsonb_array_elements(v_dias_evento) as ev
+      where (ev->>'date') = to_char(p_pickup_at at time zone 'America/Sao_Paulo', 'YYYY-MM-DD')
+        and v_hoje <= (to_date(ev->>'date', 'YYYY-MM-DD') - v_prazo_dias)
+    ) into v_dentro_prazo;
+
+    if not v_dentro_prazo then
+      return jsonb_build_object(
+        'status', 'closed',
+        'message', 'Esse dia de retirada não está mais disponível. Escolha outro dia do evento.'
+      );
+    end if;
   end if;
 
   -- ---------------------------------------------------------------------
@@ -647,19 +680,15 @@ insert into public.settings (key, value) values
   ('min_order_cents',   '0'),
   ('slot_minutes',      '15'),
   ('lead_minutes',      '30'),
-  ('max_days_ahead',    '7'),
+  ('order_cutoff_days', '1'),
   ('primary_color',     '#C8102E'),
   ('secondary_color',   '#FFFFFF'),
   ('accent_color',      '#F2B233'),
   ('logo_url',          ''),
   ('whatsapp_footer',   'Pedido registrado no sistema.'),
-  ('hours', '{"0":{"open":"18:00","close":"22:30","closed":false},
-              "1":{"open":"18:00","close":"22:30","closed":true},
-              "2":{"open":"18:00","close":"22:30","closed":false},
-              "3":{"open":"18:00","close":"22:30","closed":false},
-              "4":{"open":"18:00","close":"22:30","closed":false},
-              "5":{"open":"18:00","close":"23:30","closed":false},
-              "6":{"open":"18:00","close":"23:30","closed":false}}')
+  -- Dias específicos do festival de esfihas, cadastrados pelo painel.
+  -- Ex.: [{"date":"2026-09-05","open":"18:00","close":"22:30"}]
+  ('event_days', '[]')
 on conflict (key) do nothing;
 
 

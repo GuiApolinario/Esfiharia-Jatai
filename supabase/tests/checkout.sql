@@ -242,9 +242,42 @@ begin
   raise notice '    OK: pedido antigo ainda mostra 800 mesmo com produto a 9999';
   update public.products set price_cents = 800 where id = v_carne;
 
+  ---------------------------------------------------------------------------
+  raise notice '--- TESTE 17: pedido fora do prazo do dia de evento é recusado';
+  update public.settings set value = '1' where key = 'order_cutoff_days';
+  update public.settings set value =
+    jsonb_build_array(jsonb_build_object(
+      'date', to_char(current_date, 'YYYY-MM-DD'), 'open', '18:00', 'close', '22:30'
+    ))::text
+    where key = 'event_days';
+
+  v_r := public.create_order('Teste Evento', '15999998888',
+    jsonb_build_array(jsonb_build_object('product_id', v_carne, 'quantity', 1)),
+    p_pickup_at := (current_date::timestamp + interval '19 hours'));
+  if v_r->>'status' <> 'closed' then
+    raise exception 'FALHOU: esperava closed (prazo de 1 dia antes do evento já passou), veio %', v_r->>'status';
+  end if;
+  raise notice '    OK: recusado com "%"', v_r->>'message';
+
+  raise notice '--- TESTE 18: pedido dentro do prazo do dia de evento é aceito';
+  update public.settings set value =
+    jsonb_build_array(jsonb_build_object(
+      'date', to_char(current_date + 2, 'YYYY-MM-DD'), 'open', '18:00', 'close', '22:30'
+    ))::text
+    where key = 'event_days';
+
+  v_r := public.create_order('Teste Evento', '15999998888',
+    jsonb_build_array(jsonb_build_object('product_id', v_carne, 'quantity', 1)),
+    p_pickup_at := ((current_date + 2)::timestamp + interval '19 hours'));
+  if (v_r->>'total_cents')::int <> 800 then
+    raise exception 'FALHOU: pedido dentro do prazo deveria ter sido aceito, veio %', v_r;
+  end if;
+  raise notice '    OK: pedido para evento daqui a 2 dias aceito normalmente';
+  update public.settings set value = '[]' where key = 'event_days';
+
   raise notice '';
   raise notice '================================================';
-  raise notice '  TODOS OS 16 TESTES PASSARAM';
+  raise notice '  TODOS OS 18 TESTES PASSARAM';
   raise notice '================================================';
 end;
 $t$;
