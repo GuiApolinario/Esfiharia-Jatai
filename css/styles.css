@@ -741,10 +741,15 @@ textarea.in { min-height: 76px; resize: vertical; line-height: 1.45; }
   background: var(--ink); color: #fff;
   font-size: 14px; font-weight: 600;
   box-shadow: var(--sh-lg);
+  opacity: 0;
+  /* translateY em % é relativo à própria altura do toast: como ele fica vazio
+     (sem texto) fora de uma mensagem, essa altura é pequena e não empurra o
+     toast para fora da tela de verdade — por isso o opacity acima como rede
+     de segurança, escondendo mesmo quando a translação não é suficiente. */
   transform: translate(-50%, 150%);
-  transition: transform .3s cubic-bezier(.2, .8, .3, 1);
+  transition: transform .3s cubic-bezier(.2, .8, .3, 1), opacity .3s;
 }
-.toast.is-on { transform: translate(-50%, 0); }
+.toast.is-on { transform: translate(-50%, 0); opacity: 1; }
 
 /* Com uma folha aberta o rodapé é o botão principal: o aviso vai para o topo. */
 body.sheet-open .toast {
