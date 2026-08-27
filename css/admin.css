@@ -299,11 +299,12 @@ body.adm { background: #f5f1ee; }
 
 @media print {
   body.sheet-open * { visibility: hidden; }
-  #lSheet, #lSheet * { visibility: visible; }
-  #lSheet {
+  #lSheet, #lSheet *, #oSheet, #oSheet * { visibility: visible; }
+  #lSheet, #oSheet {
     position: absolute; inset: 0; max-height: none; transform: none;
     border-radius: 0; box-shadow: none; background: #fff;
   }
-  #lSheet .sheet__grab, #lSheet .sheet__h button, #lSheet .sheet__f { display: none; }
+  #lSheet .sheet__grab, #lSheet .sheet__h button, #lSheet .sheet__f,
+  #oSheet .sheet__grab, #oSheet .sheet__h button, #oSheet .sheet__f { display: none; }
   .tbl { white-space: normal; }
 }

@@ -3,9 +3,9 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, dateTimeBR, escapeHtml, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=5';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=5';
-import * as data from './data.js?v=5';
+import { $, $$, dateTimeBR, escapeHtml, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=6';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=6';
+import * as data from './data.js?v=6';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -15,6 +15,7 @@ const S = {
   cats: [],
   groups: [],
   orders: [],
+  recentOrders: [],
   listOrders: [],
   settings: null,
   editP: null,
@@ -84,6 +85,7 @@ const oops = (err) => { if (!guard(err)) toast(err.message, 'bad'); };
 async function loadHome() {
   try {
     const [stats, orders] = await Promise.all([data.dashboardStats(), data.listOrders({ limit: 8 })]);
+    S.recentOrders = orders;
     $('#stats').innerHTML = `
       <div class="stat"><div class="stat__l">Pedidos hoje</div><div class="stat__v">${stats.ordersToday}</div></div>
       <div class="stat stat--brand"><div class="stat__l">Valor hoje</div><div class="stat__v money">${money(stats.revenueToday)}</div></div>
@@ -101,6 +103,13 @@ async function loadOrders() {
     S.orders = await data.listOrders({ status: $('#oStatus').value, search: $('#oSearch').value });
     renderOrders();
   } catch (err) { oops(err); }
+}
+
+/** Um pedido pode estar só na lista da aba Pedidos, só nos "recentes" do
+ *  Início, ou nos dois — por isso as ações (abrir, excluir, imprimir)
+ *  procuram nas duas listas em vez de assumir qual delas já carregou. */
+function findOrder(id) {
+  return S.orders.find((x) => x.id === id) || S.recentOrders.find((x) => x.id === id);
 }
 
 function renderOrders() {
@@ -128,7 +137,9 @@ function orderRow(o) {
     <article class="row" data-o="${o.id}">
       <div class="row__ph" style="font-size:17px">🧾</div>
       <div>
-        <div class="row__t">${escapeHtml(o.public_code)} <span class="tag tag--${o.status}">${o.status}</span></div>
+        <div class="row__t">${escapeHtml(o.public_code)} <span class="tag tag--${o.status}">${o.status}</span>
+          ${o.printed_at ? '<span class="tag" title="Impresso">🖨️</span>' : ''}
+        </div>
         <p class="row__d">${escapeHtml(o.customer_name)} · ${maskPhone(o.customer_phone)}</p>
         <div class="row__m">
           <span class="tag tag--p money">${money(o.total_cents)}</span>
@@ -144,7 +155,7 @@ function orderRow(o) {
 }
 
 function openOrder(id) {
-  const o = S.orders.find((x) => x.id === id);
+  const o = findOrder(id);
   if (!o) return;
 
   $('#oTitle').textContent = o.public_code;
@@ -154,6 +165,7 @@ function openOrder(id) {
       <div class="verified__c">${escapeHtml(o.public_code)}</div>
       <div class="verified__v money">Total oficial: ${money(o.total_cents)}</div>
       <div class="verified__d">Criado em ${dateTimeBR(o.created_at)}</div>
+      ${o.printed_at ? `<div class="verified__d">🖨️ Impresso em ${dateTimeBR(o.printed_at)}</div>` : ''}
     </div>
     <div class="block">
       <h3>Cliente</h3>
@@ -186,13 +198,30 @@ function openOrder(id) {
       ${['novo', 'confirmado', 'preparando', 'finalizado', 'cancelado'].map((s) =>
         `<button class="chip ${o.status === s ? 'is-on' : ''}" data-st="${s}" data-oid="${o.id}">${s}</button>`).join('')}
     </div>
-    <button class="mini mini--bad" data-delo="${o.id}" style="margin-top:14px">🗑️ Excluir pedido</button>`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="mini" data-print="${o.id}">🖨️ Imprimir</button>
+      <button class="mini mini--bad" data-delo="${o.id}">Excluir pedido</button>
+    </div>`;
 
   openSheet('#oSheet');
 }
 
+/** Abre a impressão do pedido (só ele, via CSS de impressão do #oSheet) e
+ *  marca a hora, para a cozinha saber o que já foi impresso. */
+function printOrder(id) {
+  const o = findOrder(id);
+  if (!o) return;
+  window.print();
+  data.markOrderPrinted(id).then(({ printed_at }) => {
+    o.printed_at = printed_at;
+    renderOrders();
+    openOrder(id);
+    toast('Pedido marcado como impresso.', 'ok');
+  }).catch(oops);
+}
+
 async function delOrder(id) {
-  const o = S.orders.find((x) => x.id === id);
+  const o = findOrder(id);
   if (!o) return;
   if (!confirm(`Excluir o pedido ${o.public_code} de ${o.customer_name}? Essa ação não pode ser desfeita.`)) return;
   try {
@@ -230,7 +259,7 @@ function renderOrdersList() {
   $('#lTable').innerHTML = !rows.length ? '' : `
     <thead><tr>
       <th>Código</th><th>Cliente</th><th>Telefone</th><th>Pedido</th>
-      <th>Retirada</th><th>Situação</th><th>Total</th><th>Criado em</th>
+      <th>Retirada</th><th>Situação</th><th>Total</th><th>Criado em</th><th>Impresso em</th>
     </tr></thead>
     <tbody>
       ${rows.map((o) => `
@@ -243,6 +272,7 @@ function renderOrdersList() {
           <td>${escapeHtml(o.status)}</td>
           <td class="money">${money(o.total_cents)}</td>
           <td>${dateTimeBR(o.created_at)}</td>
+          <td>${o.printed_at ? dateTimeBR(o.printed_at) : '—'}</td>
         </tr>`).join('')}
     </tbody>`;
 }
@@ -256,7 +286,7 @@ function downloadOrdersCsv() {
   const rows = S.listOrders || [];
   if (!rows.length) return toast('Nenhum pedido para exportar.', 'bad');
 
-  const head = ['Código', 'Cliente', 'Telefone', 'Pedido', 'Retirada', 'Situação', 'Total (R$)', 'Criado em'];
+  const head = ['Código', 'Cliente', 'Telefone', 'Pedido', 'Retirada', 'Situação', 'Total (R$)', 'Criado em', 'Impresso em'];
   const lines = [head.join(';')];
   for (const o of rows) {
     lines.push([
@@ -268,6 +298,7 @@ function downloadOrdersCsv() {
       o.status,
       (o.total_cents / 100).toFixed(2).replace('.', ','),
       dateTimeBR(o.created_at),
+      o.printed_at ? dateTimeBR(o.printed_at) : '',
     ].map(csvField).join(';'));
   }
 
@@ -286,7 +317,7 @@ function downloadOrdersCsv() {
 async function changeStatus(id, status) {
   try {
     await data.setOrderStatus(id, status);
-    const o = S.orders.find((x) => x.id === id);
+    const o = findOrder(id);
     if (o) o.status = status;
     renderOrders();
     openOrder(id);
@@ -810,6 +841,8 @@ function bind() {
     if (st) return changeStatus(Number(st.dataset.oid), st.dataset.st);
     const delo = e.target.closest('[data-delo]');
     if (delo) return delOrder(Number(delo.dataset.delo));
+    const pr = e.target.closest('[data-print]');
+    if (pr) return printOrder(Number(pr.dataset.print));
   });
 
   // Produtos

@@ -151,11 +151,15 @@ create table if not exists public.orders (
   total_cents    int    not null default 0,
   status         text   not null default 'novo'
                  check (status in ('novo','confirmado','preparando','finalizado','cancelado')),
+  printed_at     timestamptz,
   created_at     timestamptz not null default now()
 );
 
 create index if not exists orders_created_idx on public.orders (created_at desc);
 create index if not exists orders_status_idx  on public.orders (status);
+
+-- Migração: quem rodou uma versão anterior deste arquivo ganha a coluna agora.
+alter table public.orders add column if not exists printed_at timestamptz;
 
 create table if not exists public.order_items (
   id                       bigint generated always as identity primary key,

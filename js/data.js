@@ -7,7 +7,7 @@
    preços da tabela products e ignora qualquer preço vindo do navegador.
    ========================================================================== */
 
-import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=5';
+import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=6';
 
 const BUCKET = 'produtos';
 
@@ -369,6 +369,14 @@ export async function setOrderStatus(id, status) {
 export async function deleteOrder(id) {
   const { error } = await client().from('orders').delete().eq('id', id);
   if (error) fail(error, 'Não foi possível excluir o pedido.');
+}
+
+/** Marca o pedido como impresso agora, para a cozinha saber o que já saiu. */
+export async function markOrderPrinted(id) {
+  const { data, error } = await client().from('orders')
+    .update({ printed_at: new Date().toISOString() }).eq('id', id).select('printed_at').single();
+  if (error) fail(error, 'Não foi possível marcar o pedido como impresso.');
+  return data;
 }
 
 /** Números do dia para o painel inicial. */
