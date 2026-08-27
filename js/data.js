@@ -7,7 +7,7 @@
    preços da tabela products e ignora qualquer preço vindo do navegador.
    ========================================================================== */
 
-import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=4';
+import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=5';
 
 const BUCKET = 'produtos';
 
@@ -363,6 +363,12 @@ export async function listOrders({ status = '', search = '', limit = 60 } = {}) 
 export async function setOrderStatus(id, status) {
   const { error } = await client().from('orders').update({ status }).eq('id', id);
   if (error) fail(error, 'Não foi possível atualizar o pedido.');
+}
+
+/** Apaga o pedido e, em cascata, seus itens e adicionais (on delete cascade no banco). */
+export async function deleteOrder(id) {
+  const { error } = await client().from('orders').delete().eq('id', id);
+  if (error) fail(error, 'Não foi possível excluir o pedido.');
 }
 
 /** Números do dia para o painel inicial. */

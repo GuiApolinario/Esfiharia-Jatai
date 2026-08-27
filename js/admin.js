@@ -3,9 +3,9 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, dateTimeBR, escapeHtml, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=4';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=4';
-import * as data from './data.js?v=4';
+import { $, $$, dateTimeBR, escapeHtml, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=5';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=5';
+import * as data from './data.js?v=5';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -136,7 +136,10 @@ function orderRow(o) {
           <span>${dateTimeBR(o.created_at)}</span>
         </div>
       </div>
-      <div class="row__a"><button class="mini mini--go" data-open="${o.id}">Ver pedido</button></div>
+      <div class="row__a">
+        <button class="mini mini--go" data-open="${o.id}">Ver pedido</button>
+        <button class="mini mini--bad" data-delo="${o.id}">Excluir</button>
+      </div>
     </article>`;
 }
 
@@ -182,9 +185,23 @@ function openOrder(id) {
     <div class="chips">
       ${['novo', 'confirmado', 'preparando', 'finalizado', 'cancelado'].map((s) =>
         `<button class="chip ${o.status === s ? 'is-on' : ''}" data-st="${s}" data-oid="${o.id}">${s}</button>`).join('')}
-    </div>`;
+    </div>
+    <button class="mini mini--bad" data-delo="${o.id}" style="margin-top:14px">🗑️ Excluir pedido</button>`;
 
   openSheet('#oSheet');
+}
+
+async function delOrder(id) {
+  const o = S.orders.find((x) => x.id === id);
+  if (!o) return;
+  if (!confirm(`Excluir o pedido ${o.public_code} de ${o.customer_name}? Essa ação não pode ser desfeita.`)) return;
+  try {
+    await data.deleteOrder(id);
+    closeSheets();
+    toast('Pedido excluído.', 'ok');
+    await loadOrders();
+    loadHome();
+  } catch (err) { oops(err); }
 }
 
 /** "2x Esfiha de Carne (+ Catupiry); 1x Água Mineral 500ml" */
@@ -791,6 +808,8 @@ function bind() {
     if (open) return openOrder(Number(open.dataset.open));
     const st = e.target.closest('[data-st]');
     if (st) return changeStatus(Number(st.dataset.oid), st.dataset.st);
+    const delo = e.target.closest('[data-delo]');
+    if (delo) return delOrder(Number(delo.dataset.delo));
   });
 
   // Produtos
