@@ -3,10 +3,10 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=14';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=14';
-import { ESFIHA } from './icons.js?v=14';
-import * as data from './data.js?v=14';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=15';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=15';
+import { ESFIHA } from './icons.js?v=15';
+import * as data from './data.js?v=15';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -50,7 +50,11 @@ async function enter(user) {
   $('#login').style.display = 'none';
   $('#shell').classList.add('is-on');
   $('#who').textContent = user.email || '';
+  renderNotifPrefs();
+  startClock();
   await Promise.all([loadCats(), loadGroups(), loadProducts(), loadSettings(), loadHome()]);
+  $('#dashStore').textContent = S.settings?.store_name || 'Esfiharia Jataí';
+  data.subscribeNewOrders(handleNewOrder);
 }
 
 async function doLogin(e) {
@@ -96,6 +100,135 @@ async function loadHome() {
     $('#recent').innerHTML = orders.length ? orders.map(orderRow).join('')
       : `<div class="empty-box"><div class="empty-box__ic">🧾</div>Nenhum pedido ainda.</div>`;
   } catch (err) { oops(err); }
+}
+
+/** Relógio do cabeçalho do Início — bate o ponto de quem tá de olho na tela. */
+function startClock() {
+  const tick = () => {
+    const now = new Date();
+    const hh = now.getHours();
+    const saud = hh < 12 ? 'Bom dia!' : hh < 18 ? 'Boa tarde!' : 'Boa noite!';
+    const g = $('#dashGreeting'), c = $('#dashClock');
+    if (g) g.textContent = `${saud} 👋`;
+    if (c) c.textContent = now.toLocaleString('pt-BR', {
+      weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+    });
+  };
+  tick();
+  setInterval(tick, 1000 * 30);
+}
+
+/* ---------------------------------------------------------- avisos de pedido */
+
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const NOTIF_KEY = 'jt_notif_prefs_v1';
+let audioCtx = null;
+
+function loadNotifPrefs() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(NOTIF_KEY));
+    if (raw && typeof raw === 'object') {
+      return { enabled: raw.enabled !== false, sound: raw.sound !== false, days: Array.isArray(raw.days) ? raw.days : [0, 1, 2, 3, 4, 5, 6] };
+    }
+  } catch { /* usa padrão */ }
+  return { enabled: true, sound: true, days: [0, 1, 2, 3, 4, 5, 6] };
+}
+
+function saveNotifPrefs(p) {
+  try { localStorage.setItem(NOTIF_KEY, JSON.stringify(p)); } catch { /* modo privado etc. */ }
+}
+
+function renderNotifPrefs() {
+  const p = loadNotifPrefs();
+  $('#notifOn').checked = p.enabled;
+  $('#notifSound').checked = p.sound;
+  $('#notifDays').innerHTML = DIAS_SEMANA.map((d, i) =>
+    `<button type="button" class="chip${p.days.includes(i) ? ' is-on' : ''}" data-day="${i}">${d}</button>`).join('');
+}
+
+/** Cria/retoma o AudioContext só numa interação real do usuário — navegador
+ *  bloqueia som que começa sozinho sem gesto (clique, toque etc.). */
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+
+/** Toca um "ding-dong" de duas notas sem depender de nenhum arquivo de áudio. */
+function playChime() {
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+  const notas = [880, 1174.66];
+  notas.forEach((freq, i) => {
+    const t0 = ctx.currentTime + i * 0.16;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.22, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.55);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.6);
+  });
+}
+
+async function ensureNotifPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try { return (await Notification.requestPermission()) === 'granted'; } catch { return false; }
+}
+
+function showNativeNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try { new Notification(title, { body }); } catch { /* alguns navegadores restringem */ }
+}
+
+let obannerTimer = null;
+function showOrderBanner(msg) {
+  const el = $('#obanner');
+  if (!el) return;
+  $('#obannerMsg').textContent = msg;
+  el.classList.add('is-on');
+  clearTimeout(obannerTimer);
+  obannerTimer = setTimeout(() => el.classList.remove('is-on'), 8000);
+}
+
+let unseenCount = 0;
+const baseTitle = document.title;
+function bumpUnseenBadge() {
+  unseenCount += 1;
+  document.title = `(${unseenCount}) ${baseTitle}`;
+}
+function clearUnseenBadge() {
+  unseenCount = 0;
+  document.title = baseTitle;
+}
+
+/** Dispara o aviso completo (banner + som + notificação nativa), sempre —
+ *  usado tanto pelo pedido real quanto pelo botão "Testar aviso". */
+function fireOrderAlert(o, { sound = true } = {}) {
+  const msg = `${o.customer_name} · ${money(o.total_cents)}`;
+  showOrderBanner(msg);
+  if (sound) playChime();
+  showNativeNotification('🔔 Pedido novo!', msg);
+  bumpUnseenBadge();
+}
+
+/** Chega um pedido novo de verdade (Realtime) — só avisa se o dono deixou
+ *  ligado pra hoje. */
+function handleNewOrder(o) {
+  const p = loadNotifPrefs();
+  if (!p.enabled || !p.days.includes(new Date().getDay())) return;
+  fireOrderAlert(o, { sound: p.sound });
+  if ($('.nav__b.is-on')?.dataset.p === 'home') loadHome();
+  if ($('.nav__b.is-on')?.dataset.p === 'pedidos') loadOrders();
 }
 
 /* ----------------------------------------------------------------- pedidos */
@@ -944,9 +1077,36 @@ function closeSheets() {
 /* --------------------------------------------------------------- eventos */
 
 function bind() {
-  $('#loginForm').addEventListener('submit', doLogin);
+  $('#loginForm').addEventListener('submit', (e) => { ensureAudioCtx(); doLogin(e); });
   $('#logout').addEventListener('click', async () => { await data.signOut().catch(() => {}); location.reload(); });
   $('#scrim').addEventListener('click', closeSheets);
+  window.addEventListener('focus', clearUnseenBadge);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) clearUnseenBadge(); });
+
+  // Avisos de pedido novo
+  $('#notifOn').addEventListener('change', (e) => {
+    const p = loadNotifPrefs(); p.enabled = e.target.checked; saveNotifPrefs(p);
+    if (p.enabled) ensureNotifPermission();
+  });
+  $('#notifSound').addEventListener('change', (e) => {
+    const p = loadNotifPrefs(); p.sound = e.target.checked; saveNotifPrefs(p);
+    if (p.sound) { ensureAudioCtx(); playChime(); }
+  });
+  $('#notifDays').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-day]');
+    if (!b) return;
+    const day = Number(b.dataset.day);
+    const p = loadNotifPrefs();
+    p.days = p.days.includes(day) ? p.days.filter((d) => d !== day) : [...p.days, day];
+    saveNotifPrefs(p);
+    b.classList.toggle('is-on', p.days.includes(day));
+  });
+  $('#notifTest').addEventListener('click', async () => {
+    ensureAudioCtx();
+    await ensureNotifPermission();
+    fireOrderAlert({ customer_name: 'Pedido de teste', total_cents: 4590 });
+  });
+  $('#obannerClose').addEventListener('click', () => $('#obanner').classList.remove('is-on'));
   document.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeSheets(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheets(); });
 

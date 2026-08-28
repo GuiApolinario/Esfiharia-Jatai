@@ -7,7 +7,7 @@
    preços da tabela products e ignora qualquer preço vindo do navegador.
    ========================================================================== */
 
-import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=14';
+import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=15';
 
 const BUCKET = 'produtos';
 
@@ -390,6 +390,21 @@ export async function markOrderPrinted(id) {
     .update({ printed_at: new Date().toISOString() }).eq('id', id).select('printed_at').single();
   if (error) fail(error, 'Não foi possível marcar o pedido como impresso.');
   return data;
+}
+
+/** Avisa em tempo real assim que um pedido novo é criado (INSERT em orders).
+ *  A RLS da tabela já garante que só administrador autenticado recebe esses
+ *  eventos — visitante anônimo não é notificado de nada. Se o projeto não
+ *  tiver o Realtime habilitado, a inscrição simplesmente nunca dispara (o
+ *  painel continua funcionando normalmente, só sem o aviso instantâneo).
+ *  Devolve uma função para cancelar a inscrição. */
+export function subscribeNewOrders(onInsert) {
+  if (!isConfigured || !supabase) return () => {};
+  const channel = supabase
+    .channel('orders-insert')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => onInsert(payload.new))
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
 }
 
 /** Números do dia para o painel inicial. */

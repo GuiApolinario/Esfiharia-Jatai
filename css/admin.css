@@ -47,7 +47,9 @@ body.adm { background: #f5f1ee; }
   position: sticky; top: 0; z-index: 40;
   display: flex; align-items: center; gap: 10px;
   padding: 11px 14px;
-  background: var(--ink); color: #fff;
+  background: linear-gradient(120deg, var(--brand-dark) 0%, var(--brand) 55%, #e8283a 100%);
+  color: #fff;
+  box-shadow: 0 2px 14px rgba(200, 16, 46, .25);
 }
 .top__n { display: flex; align-items: center; gap: 8px; margin-right: auto; font-weight: 700; font-size: 15px; }
 .top__u { font-size: 12px; color: #b0a49e; display: none; }
@@ -347,4 +349,122 @@ body.adm { background: #f5f1ee; }
     font-family: 'Courier New', ui-monospace, monospace;
     color: #000; background: #fff;
   }
+}
+
+/* =========================================================================
+   Início — cabeçalho "vivo" com fundo 3D e cartão de avisos de pedido novo.
+   Pensado pra tela que fica sempre aberta no balcão. */
+
+.dash-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  margin-bottom: 16px;
+  padding: 22px 18px;
+  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 60%, #e8283a 100%);
+  box-shadow: 0 10px 26px rgba(160, 12, 36, .28);
+  perspective: 900px;
+}
+.dash-hero__fx { position: absolute; inset: 0; pointer-events: none; transform-style: preserve-3d; }
+
+.dash-orb {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%);
+  filter: blur(1px);
+  animation: orbFloat 9s ease-in-out infinite;
+}
+.dash-orb--1 { width: 120px; height: 120px; top: -30px; right: 6%; animation-duration: 10s; }
+.dash-orb--2 { width: 70px; height: 70px; bottom: -20px; right: 28%; animation-duration: 7.5s; animation-delay: -2s; opacity: .8; }
+.dash-orb--3 { width: 46px; height: 46px; top: 30%; left: -10px; animation-duration: 8.5s; animation-delay: -4s; opacity: .7; }
+
+.dash-ic {
+  position: absolute;
+  width: 46px; height: 46px;
+  transform-style: preserve-3d;
+  animation: icSpin 12s linear infinite;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.25));
+}
+.dash-ic svg { display: block; width: 100%; height: 100%; }
+.dash-ic--1 { top: 14px; right: 18%; width: 40px; height: 40px; animation-duration: 11s; }
+.dash-ic--2 { bottom: 10px; right: 6%; width: 30px; height: 30px; animation-duration: 14s; animation-direction: reverse; }
+.dash-ic--3 { top: 40%; left: 8%; width: 26px; height: 26px; animation-duration: 9s; }
+
+.dash-hero__b { position: relative; z-index: 1; color: #fff; }
+.dash-hero__hi { margin: 0; font-size: 13.5px; font-weight: 700; opacity: .85; }
+.dash-hero__store { margin: 2px 0 8px; font-size: 21px; font-weight: 800; }
+.dash-hero__clock {
+  margin: 0; font-size: 26px; font-weight: 800; letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-8px, 14px, 40px) scale(1.08); }
+}
+@keyframes icSpin {
+  0%   { transform: rotateX(0deg) rotateY(0deg) translateZ(0); }
+  50%  { transform: rotateX(180deg) rotateY(160deg) translateZ(24px); }
+  100% { transform: rotateX(360deg) rotateY(360deg) translateZ(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-orb, .dash-ic { animation: none; }
+}
+
+.ncard {
+  border: 1px solid var(--line, #ecdfd9);
+  border-radius: 16px;
+  padding: 14px 16px 16px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+.ncard__h { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+.ncard__ic { font-size: 22px; line-height: 1; }
+.ncard__h h3 { margin: 0 0 2px; font-size: 14.5px; font-weight: 800; }
+.ncard__h p { margin: 0; font-size: 12.5px; color: var(--ink-soft); }
+.ncard__row { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-bottom: 14px; }
+.ncard__days { display: flex; flex-wrap: wrap; gap: 6px; }
+.ncard__days .chip { cursor: pointer; user-select: none; }
+.ncard__days .chip.is-on { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+.obanner {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translate(-50%, 150%);
+  opacity: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(92vw, 360px);
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #1f1a18;
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(0,0,0,.3);
+  transition: transform .28s ease, opacity .28s ease;
+  pointer-events: none;
+}
+.obanner.is-on { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+.obanner__ic { font-size: 22px; animation: bellShake 1.4s ease-in-out infinite; }
+.obanner.is-on .obanner__ic { animation-play-state: running; }
+.obanner__b { flex: 1; min-width: 0; }
+.obanner__t { margin: 0; font-size: 13.5px; font-weight: 800; }
+.obanner__d { margin: 2px 0 0; font-size: 12.5px; color: #d8cfca; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obanner__x { flex: none; background: none; border: 0; color: #fff; opacity: .7; font-size: 15px; cursor: pointer; padding: 4px; }
+.obanner__x:active { opacity: 1; }
+
+@keyframes bellShake {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(-14deg); }
+  20% { transform: rotate(12deg); }
+  30% { transform: rotate(-8deg); }
+  40% { transform: rotate(6deg); }
+  50% { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .obanner__ic { animation: none; }
 }

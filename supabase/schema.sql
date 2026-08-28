@@ -821,6 +821,33 @@ $seed$;
 
 
 -- =============================================================================
+--  8b. TEMPO REAL — avisa o painel assim que um pedido novo é criado
+--
+--  Sem isso o painel só saberia de um pedido novo ao recarregar a página.
+--  A RLS de "orders" (seção 5) já garante que só administradores autenticados
+--  recebem esses eventos — visitante anônimo não enxerga pedido nenhum.
+-- =============================================================================
+
+do $realtime$
+begin
+  -- Projetos criados sem o Realtime habilitado não têm essa publicação — nesse
+  -- caso o painel funciona igual, só sem o aviso instantâneo de pedido novo.
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    raise notice 'Publicação supabase_realtime não existe: ative "Realtime" no painel do Supabase (Database > Replication) se quiser o aviso instantâneo de pedido novo.';
+    return;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'orders'
+  ) then
+    alter publication supabase_realtime add table public.orders;
+  end if;
+end;
+$realtime$;
+
+
+-- =============================================================================
 --  9. PASSO FINAL — LIBERAR O SEU ACESSO AO PAINEL
 --
 --  ANTES de rodar o comando abaixo:
