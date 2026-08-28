@@ -790,6 +790,9 @@ body.sheet-open .toast.is-on { transform: translate(-50%, 0); }
 
 @media (min-width: 600px) {
   .wrap { padding-inline: 24px; }
+  /* Sem isso a barra de categorias fica grudada na borda esquerda da tela,
+     desalinhada com o resto do conteúdo (que já é centralizado via .wrap). */
+  .cats { max-width: 640px; margin-inline: auto; padding-inline: 24px; }
   .hero { padding: 34px 0 26px; }
   .list { grid-template-columns: 1fr 1fr; }
   .sheet {
@@ -805,6 +808,7 @@ body.sheet-open .toast.is-on { transform: translate(-50%, 0); }
   .wrap { max-width: 940px; }
   .hdr__in { max-width: 940px; }
   .cartbar__in { max-width: 940px; }
+  .cats { max-width: 940px; }
   .list { grid-template-columns: repeat(3, 1fr); }
   .hero h1 { font-size: 40px; }
   .sheet { max-height: 88dvh; }

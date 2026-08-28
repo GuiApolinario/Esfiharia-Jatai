@@ -3,9 +3,9 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=11';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=11';
-import * as data from './data.js?v=11';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=12';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=12';
+import * as data from './data.js?v=12';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 

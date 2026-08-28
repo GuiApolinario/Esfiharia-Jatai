@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=11';
-import { fetchCatalog, createOrder } from './data.js?v=11';
-import * as cart from './cart.js?v=11';
-import { ESFIHA, placeholder } from './icons.js?v=11';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=11';
+import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=12';
+import { fetchCatalog, createOrder } from './data.js?v=12';
+import * as cart from './cart.js?v=12';
+import { ESFIHA, placeholder } from './icons.js?v=12';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=12';
 
 const state = {
   store: null,
