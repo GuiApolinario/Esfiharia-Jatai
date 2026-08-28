@@ -837,8 +837,9 @@ body.sheet-open .toast.is-on { transform: translate(-50%, 0); }
 .splash {
   position: fixed; inset: 0; z-index: 200;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  /* Mesmos tons de vermelho da arte, para não sobrar borda branca em nenhuma proporção de tela. */
-  background: radial-gradient(120% 80% at 50% 18%, #7a0f1c 0%, #4a0a12 100%);
+  /* Tons extraídos direto da imagem (canto ~#3c0101, área central ~#640101),
+     para o fundo casar exatamente com a arte em qualquer proporção de tela. */
+  background: radial-gradient(120% 80% at 50% 18%, #640101 0%, #300000 100%);
   overflow: hidden;
   opacity: 0;
   transition: opacity .45s ease, visibility .45s;
