@@ -3,9 +3,9 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=9';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=9';
-import * as data from './data.js?v=9';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=10';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=10';
+import * as data from './data.js?v=10';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -271,6 +271,65 @@ function printOrder(id) {
   }).catch(oops);
 }
 
+/** Mesmo bloco do recibo individual, mas sem o cabeçalho da loja (que já
+ *  aparece uma vez só no topo da lista) — usado dentro de printOrdersList(). */
+function ticketOrderBlock(o) {
+  const items = (o.order_items || []).map((i) => {
+    const addons = (i.order_item_addons || []).map((a) => a.addon_name_snapshot).join(', ');
+    return `
+      <div class="ticket__item">
+        <span>${i.quantity}x ${escapeHtml(i.product_name_snapshot)}</span>
+        <span>${money(i.subtotal_cents)}</span>
+      </div>
+      ${addons ? `<div class="ticket__sub">+ ${escapeHtml(addons)}</div>` : ''}
+      ${i.notes ? `<div class="ticket__sub">obs: ${escapeHtml(i.notes)}</div>` : ''}`;
+  }).join('');
+
+  return `
+    <div class="ticket__block">
+      <div class="ticket__big">${escapeHtml(o.customer_name)}</div>
+      <div class="ticket__v">${maskPhone(o.customer_phone)} · ${escapeHtml(o.public_code)}</div>
+      ${items}
+      ${o.notes ? `<div class="ticket__sub">obs geral: ${escapeHtml(o.notes)}</div>` : ''}
+      <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(o.total_cents)}</span></div>
+    </div>`;
+}
+
+/** Relatório geral no mesmo formato estreito de cupom, um pedido inteiro
+ *  após o outro (nunca uma tabela larga) — pronto pra impressora térmica. */
+function listTicketHtml(rows) {
+  const storeName = S.settings?.store_name || 'Esfiharia Jataí';
+  const totalGeral = rows.reduce((s, o) => s + o.total_cents, 0);
+
+  let last;
+  const blocks = rows.map((o) => {
+    const label = pickupGroupLabel(o);
+    const group = label !== last ? `<div class="ticket__group">🕒 ${escapeHtml(label)}</div>` : '';
+    last = label;
+    return group + ticketOrderBlock(o) + '<div class="ticket__hr"></div>';
+  }).join('');
+
+  return `
+    <div class="ticket__h">${escapeHtml(storeName.toUpperCase())}</div>
+    <div class="ticket__v" style="text-align:center">LISTA DE PEDIDOS</div>
+    <div class="ticket__v" style="text-align:center">${dateTimeBR(new Date())}</div>
+    <div class="ticket__hr"></div>
+    ${blocks}
+    <div class="ticket__item ticket__item--tot"><span>TOTAL GERAL</span><span>${money(totalGeral)}</span></div>
+    <div class="ticket__foot">${rows.length} pedido(s)</div>`;
+}
+
+/** Imprime a lista inteira no formato de cupom — nunca a tabela larga da
+ *  tela, que não cabe numa impressora de recibo. */
+function printOrdersList() {
+  const rows = S.listOrders || [];
+  if (!rows.length) return toast('Nenhum pedido para imprimir.', 'bad');
+  $('#printTicket').innerHTML = listTicketHtml(rows);
+  document.body.classList.add('print-ticket');
+  window.print();
+  document.body.classList.remove('print-ticket');
+}
+
 async function delOrder(id) {
   const o = findOrder(id);
   if (!o) return;
@@ -284,13 +343,15 @@ async function delOrder(id) {
   } catch (err) { oops(err); }
 }
 
-/** "2x Esfiha de Carne (+ Catupiry); 1x Água Mineral 500ml" */
-function orderItemsSummary(o) {
-  return (o.order_items || [])
-    .map((i) => `${i.quantity}x ${i.product_name_snapshot}${(i.order_item_addons || []).length
-      ? ` (+ ${i.order_item_addons.map((a) => a.addon_name_snapshot).join(', ')})` : ''}`)
-    .join('; ');
+/** Um item por linha, para facilitar identificar cada um. Versão em HTML
+ *  (já com escapeHtml aplicado por item — não escape o retorno de novo,
+ *  senão o <br> vira texto) e versão em texto puro pra CSV. */
+function orderItemLines(o) {
+  return (o.order_items || []).map((i) => `${i.quantity}x ${i.product_name_snapshot}${(i.order_item_addons || []).length
+    ? ` (+ ${i.order_item_addons.map((a) => a.addon_name_snapshot).join(', ')})` : ''}`);
 }
+const orderItemsHtml = (o) => orderItemLines(o).map(escapeHtml).join('<br>');
+const orderItemsText = (o) => orderItemLines(o).join('\n');
 
 async function openOrdersList() {
   try {
@@ -317,7 +378,7 @@ function renderOrdersList() {
           <td>${escapeHtml(o.customer_name)}</td>
           <td>${escapeHtml(o.public_code)}</td>
           <td>${maskPhone(o.customer_phone)}</td>
-          <td>${escapeHtml(orderItemsSummary(o))}</td>
+          <td>${orderItemsHtml(o)}</td>
           <td>${o.pickup_at ? dateTimeBR(o.pickup_at) : '—'}</td>
           <td>${escapeHtml(o.status)}</td>
           <td class="money">${money(o.total_cents)}</td>
@@ -350,7 +411,7 @@ function downloadOrdersCsv() {
       o.customer_name,
       o.public_code,
       maskPhone(o.customer_phone),
-      orderItemsSummary(o),
+      orderItemsText(o),
       o.pickup_at ? dateTimeBR(o.pickup_at) : '',
       o.status,
       (o.total_cents / 100).toFixed(2).replace('.', ','),
@@ -1017,7 +1078,7 @@ function bind() {
 
   // Lista completa de pedidos
   $('#openList').addEventListener('click', openOrdersList);
-  $('#lPrint').addEventListener('click', () => window.print());
+  $('#lPrint').addEventListener('click', printOrdersList);
   $('#lCsv').addEventListener('click', downloadOrdersCsv);
 
   // Aparência e conta

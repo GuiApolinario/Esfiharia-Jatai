@@ -312,7 +312,8 @@ body.adm { background: #f5f1ee; }
 
 /* -------------------------------------------------------- recibo de impressão */
 
-/* Some da tela normal; só existe pra impressão de UM pedido por vez. */
+/* Some da tela normal; só existe na hora de imprimir (um pedido ou a lista
+   inteira, sempre nesse mesmo formato estreito de cupom). */
 #printTicket { display: none; }
 
 .ticket__h { font-size: 15px; font-weight: 800; text-align: center; letter-spacing: .02em; }
@@ -326,23 +327,20 @@ body.adm { background: #f5f1ee; }
 .ticket__sub { font-size: 11.5px; color: #444; padding-left: 8px; }
 .ticket__foot { margin-top: 8px; font-size: 10.5px; color: #444; text-align: center; }
 
+/* Cabeçalho de horário e bloco de cada pedido dentro da Lista completa. */
+.ticket__group { font-size: 12px; font-weight: 800; text-transform: uppercase; margin: 10px 0 4px; }
+.ticket__block { margin-bottom: 8px; }
+.ticket__block .ticket__big { font-size: 14.5px; }
+
 @media print {
   @page { size: portrait; margin: 8mm; }
 
-  body.sheet-open * { visibility: hidden; }
-  #lSheet, #lSheet * { visibility: visible; }
-  #lSheet {
-    position: absolute; inset: 0; max-height: none; transform: none;
-    border-radius: 0; box-shadow: none; background: #fff;
-  }
-  #lSheet .sheet__grab, #lSheet .sheet__h button, #lSheet .sheet__f { display: none; }
-  .tbl { white-space: normal; }
-
-  /* Recibo de um pedido: esconde TUDO (painel, menus, botões) e mostra só o recibo. */
-  body.print-ticket * { visibility: hidden; }
-  body.print-ticket #printTicket, body.print-ticket #printTicket * { visibility: visible; }
+  /* Esconde TUDO (painel, menus, sidebar, botões) e mostra só o recibo — nunca
+     a página inteira do admin. display:none (não visibility) evita qualquer
+     sobra de layout de baixo, que era o que deixava a folha em branco. */
+  body.print-ticket > *:not(#printTicket) { display: none !important; }
   body.print-ticket #printTicket {
-    display: block; position: absolute; top: 0; left: 0;
+    display: block !important;
     width: 100%; max-width: 320px;
     font-family: 'Courier New', ui-monospace, monospace;
     color: #000; background: #fff;
