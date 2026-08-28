@@ -3,9 +3,9 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=8';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=8';
-import * as data from './data.js?v=8';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=9';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=9';
+import * as data from './data.js?v=9';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -101,10 +101,13 @@ async function loadHome() {
 
 async function loadOrders() {
   try {
-    S.orders = await data.listOrders({ status: $('#oStatus').value, search: $('#oSearch').value });
+    S.orders = await data.listOrders({ status: $('#oStatus').value, search: $('#oSearch').value, byPickup: true });
     renderOrders();
   } catch (err) { oops(err); }
 }
+
+/** "20:30, 27/08" do horário de retirada, ou um rótulo fixo pra quem não tem. */
+const pickupGroupLabel = (o) => (o.pickup_at ? dateTimeBR(o.pickup_at) : 'Sem horário de retirada');
 
 /** Um pedido pode estar só na lista da aba Pedidos, só nos "recentes" do
  *  Início, ou nos dois — por isso as ações (abrir, excluir, imprimir)
@@ -128,8 +131,21 @@ function renderOrders() {
       <div class="verified__d">${escapeHtml(exact.customer_name)} · criado em ${dateTimeBR(exact.created_at)}</div>
     </div>` : '';
 
-  $('#orders').innerHTML = S.orders.length ? S.orders.map(orderRow).join('')
+  $('#orders').innerHTML = S.orders.length ? rowsWithPickupSeparators(S.orders)
     : `<div class="empty-box"><div class="empty-box__ic">🔎</div>Nenhum pedido encontrado.</div>`;
+}
+
+/** Insere um separador toda vez que o horário de retirada muda, para a
+ *  cozinha ver de cara o que sai primeiro. */
+function rowsWithPickupSeparators(list) {
+  let last;
+  const out = [];
+  for (const o of list) {
+    const label = pickupGroupLabel(o);
+    if (label !== last) { out.push(`<div class="tsep">🕒 ${escapeHtml(label)}</div>`); last = label; }
+    out.push(orderRow(o));
+  }
+  return out.join('');
 }
 
 function orderRow(o) {
@@ -138,14 +154,14 @@ function orderRow(o) {
     <article class="row" data-o="${o.id}">
       <div class="row__ph" style="font-size:17px">🧾</div>
       <div>
-        <div class="row__t">${escapeHtml(o.public_code)} <span class="tag tag--${o.status}">${o.status}</span>
+        <div class="row__t">${escapeHtml(o.customer_name)} <span class="tag tag--${o.status}">${o.status}</span>
           ${o.printed_at ? '<span class="tag" title="Impresso">🖨️</span>' : ''}
         </div>
-        <p class="row__d">${escapeHtml(o.customer_name)} · ${maskPhone(o.customer_phone)}</p>
+        <p class="row__d">${escapeHtml(o.public_code)} · ${maskPhone(o.customer_phone)}</p>
         <div class="row__m">
           <span class="tag tag--p money">${money(o.total_cents)}</span>
           <span>${n} ${n === 1 ? 'item' : 'itens'}</span>
-          <span>${dateTimeBR(o.created_at)}</span>
+          <span>${o.pickup_at ? `🛍️ ${dateTimeBR(o.pickup_at)}` : dateTimeBR(o.created_at)}</span>
         </div>
       </div>
       <div class="row__a">
@@ -159,19 +175,18 @@ function openOrder(id) {
   const o = findOrder(id);
   if (!o) return;
 
-  $('#oTitle').textContent = o.public_code;
+  $('#oTitle').textContent = o.customer_name;
   $('#oBody').innerHTML = `
     <div class="verified">
       <div class="verified__t">✅ Pedido registrado</div>
-      <div class="verified__c">${escapeHtml(o.public_code)}</div>
+      <div class="verified__c">${escapeHtml(o.customer_name)}</div>
       <div class="verified__v money">Total oficial: ${money(o.total_cents)}</div>
-      <div class="verified__d">Criado em ${dateTimeBR(o.created_at)}</div>
+      <div class="verified__d">Código ${escapeHtml(o.public_code)} · Criado em ${dateTimeBR(o.created_at)}</div>
       ${o.printed_at ? `<div class="verified__d">🖨️ Impresso em ${dateTimeBR(o.printed_at)}</div>` : ''}
     </div>
     <div class="block">
       <h3>Cliente</h3>
-      <p style="margin:0;font-size:14px">${escapeHtml(o.customer_name)}</p>
-      <p style="margin:4px 0 0"><a href="https://wa.me/55${o.customer_phone}" target="_blank" rel="noopener"
+      <p style="margin:0"><a href="https://wa.me/55${o.customer_phone}" target="_blank" rel="noopener"
          style="color:var(--whats);font-weight:700">${maskPhone(o.customer_phone)} ↗</a></p>
       ${o.pickup_at ? `<p style="margin:8px 0 0;font-size:13.5px;color:var(--ink-soft)">🛍️ Retirada: ${dateTimeBR(o.pickup_at)}</p>` : ''}
       ${o.notes ? `<p style="margin:8px 0 0;font-size:13.5px">📝 ${escapeHtml(o.notes)}</p>` : ''}
@@ -207,12 +222,47 @@ function openOrder(id) {
   openSheet('#oSheet');
 }
 
-/** Abre a impressão do pedido (só ele, via CSS de impressão do #oSheet) e
- *  marca a hora, para a cozinha saber o que já foi impresso. */
+/** Recibo enxuto de UM pedido: nome em destaque, retirada, itens, observação
+ *  e total — nessa ordem, pensado pra impressora térmica/vertical. */
+function ticketHtml(o) {
+  const storeName = S.settings?.store_name || 'Esfiharia Jataí';
+  const items = (o.order_items || []).map((i) => {
+    const addons = (i.order_item_addons || []).map((a) => a.addon_name_snapshot).join(', ');
+    return `
+      <div class="ticket__item">
+        <span>${i.quantity}x ${escapeHtml(i.product_name_snapshot)}</span>
+        <span>${money(i.subtotal_cents)}</span>
+      </div>
+      ${addons ? `<div class="ticket__sub">+ ${escapeHtml(addons)}</div>` : ''}
+      ${i.notes ? `<div class="ticket__sub">obs: ${escapeHtml(i.notes)}</div>` : ''}`;
+  }).join('');
+
+  return `
+    <div class="ticket__h">${escapeHtml(storeName.toUpperCase())}</div>
+    <div class="ticket__hr"></div>
+    <div class="ticket__label">Cliente</div>
+    <div class="ticket__big">${escapeHtml(o.customer_name)}</div>
+    <div class="ticket__label">Telefone</div>
+    <div class="ticket__v">${maskPhone(o.customer_phone)}</div>
+    ${o.pickup_at ? `<div class="ticket__label">Retirada</div><div class="ticket__v ticket__v--big">${dateTimeBR(o.pickup_at)}</div>` : ''}
+    <div class="ticket__hr"></div>
+    ${items}
+    ${o.notes ? `<div class="ticket__hr"></div><div class="ticket__label">Observações</div><div class="ticket__v">${escapeHtml(o.notes)}</div>` : ''}
+    <div class="ticket__hr"></div>
+    <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(o.total_cents)}</span></div>
+    <div class="ticket__hr"></div>
+    <div class="ticket__foot">Pedido ${escapeHtml(o.public_code)} · ${dateTimeBR(o.created_at)}</div>`;
+}
+
+/** Imprime SÓ este pedido (recibo dedicado, nunca a lista inteira) e marca a
+ *  hora da impressão, para a cozinha saber o que já foi impresso. */
 function printOrder(id) {
   const o = findOrder(id);
   if (!o) return;
+  $('#printTicket').innerHTML = ticketHtml(o);
+  document.body.classList.add('print-ticket');
   window.print();
+  document.body.classList.remove('print-ticket');
   data.markOrderPrinted(id).then(({ printed_at }) => {
     o.printed_at = printed_at;
     renderOrders();
@@ -244,7 +294,7 @@ function orderItemsSummary(o) {
 
 async function openOrdersList() {
   try {
-    S.listOrders = await data.listOrders({ status: $('#oStatus').value, search: $('#oSearch').value, limit: 5000 });
+    S.listOrders = await data.listOrders({ status: $('#oStatus').value, search: $('#oSearch').value, limit: 5000, byPickup: true });
     renderOrdersList();
     openSheet('#lSheet');
   } catch (err) { oops(err); }
@@ -254,19 +304,18 @@ function renderOrdersList() {
   const rows = S.listOrders;
   const total = rows.reduce((s, o) => s + o.total_cents, 0);
   $('#lInfo').textContent = rows.length
-    ? `${rows.length} pedido(s) · total de ${money(total)}`
+    ? `${rows.length} pedido(s) · total de ${money(total)} · ordenados pelo horário de retirada`
     : 'Nenhum pedido encontrado com os filtros atuais.';
 
-  $('#lTable').innerHTML = !rows.length ? '' : `
-    <thead><tr>
-      <th>Código</th><th>Cliente</th><th>Telefone</th><th>Pedido</th>
-      <th>Retirada</th><th>Situação</th><th>Total</th><th>Criado em</th><th>Impresso em</th>
-    </tr></thead>
-    <tbody>
-      ${rows.map((o) => `
+  let last;
+  const body = rows.map((o) => {
+    const label = pickupGroupLabel(o);
+    const sep = label !== last ? `<tr class="tbl__sep"><td colspan="9">🕒 ${escapeHtml(label)}</td></tr>` : '';
+    last = label;
+    return sep + `
         <tr>
-          <td>${escapeHtml(o.public_code)}</td>
           <td>${escapeHtml(o.customer_name)}</td>
+          <td>${escapeHtml(o.public_code)}</td>
           <td>${maskPhone(o.customer_phone)}</td>
           <td>${escapeHtml(orderItemsSummary(o))}</td>
           <td>${o.pickup_at ? dateTimeBR(o.pickup_at) : '—'}</td>
@@ -274,8 +323,15 @@ function renderOrdersList() {
           <td class="money">${money(o.total_cents)}</td>
           <td>${dateTimeBR(o.created_at)}</td>
           <td>${o.printed_at ? dateTimeBR(o.printed_at) : '—'}</td>
-        </tr>`).join('')}
-    </tbody>`;
+        </tr>`;
+  }).join('');
+
+  $('#lTable').innerHTML = !rows.length ? '' : `
+    <thead><tr>
+      <th>Cliente</th><th>Código</th><th>Telefone</th><th>Pedido</th>
+      <th>Retirada</th><th>Situação</th><th>Total</th><th>Criado em</th><th>Impresso em</th>
+    </tr></thead>
+    <tbody>${body}</tbody>`;
 }
 
 const csvField = (v) => {
@@ -287,12 +343,12 @@ function downloadOrdersCsv() {
   const rows = S.listOrders || [];
   if (!rows.length) return toast('Nenhum pedido para exportar.', 'bad');
 
-  const head = ['Código', 'Cliente', 'Telefone', 'Pedido', 'Retirada', 'Situação', 'Total (R$)', 'Criado em', 'Impresso em'];
+  const head = ['Cliente', 'Código', 'Telefone', 'Pedido', 'Retirada', 'Situação', 'Total (R$)', 'Criado em', 'Impresso em'];
   const lines = [head.join(';')];
   for (const o of rows) {
     lines.push([
-      o.public_code,
       o.customer_name,
+      o.public_code,
       maskPhone(o.customer_phone),
       orderItemsSummary(o),
       o.pickup_at ? dateTimeBR(o.pickup_at) : '',

@@ -14,32 +14,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Lobster&family=Manrope:wght@500;600;700;800&display=swap">
+<!-- Preload da arte da tela de carregamento, para ela já estar pronta assim que o HTML existir. -->
+<link rel="preload" as="image" href="/img/splash.jpg?v=9">
 <!-- ?v=N muda a cada publicação, para o navegador não misturar HTML novo com JS/CSS antigo em cache -->
-<link rel="stylesheet" href="/css/styles.css?v=8">
+<link rel="stylesheet" href="/css/styles.css?v=9">
 </head>
 <body>
 
 <!-- Tela de carregamento. Sai sozinha quando o cardápio termina de carregar. -->
-<div class="splash" id="splash" role="status" aria-live="polite">
-  <div class="splash__in">
-    <div class="splash__logo" id="splashLogo">
-      <span class="splash__sup">Disk Esfiha</span>
-      <span class="splash__name">Jataí</span>
-      <svg class="splash__swash" viewBox="0 0 220 16" aria-hidden="true">
-        <path d="M6 11C58 4 150 3 214 8" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-      </svg>
-    </div>
-
-    <div class="splash__scene">
-      <span class="splash__heart splash__heart--l" aria-hidden="true">♥</span>
-      <span class="splash__heart splash__heart--r" aria-hidden="true">♥</span>
-      <div id="splashArt"></div>
-    </div>
-
-    <p class="splash__msg">Preparando sua experiência<span class="splash__dots"><i>.</i><i>.</i><i>.</i></span></p>
-    <div class="splash__bar"><span></span></div>
-    <p class="splash__tag">Sabor que une! <span aria-hidden="true">♥</span></p>
-  </div>
+<div class="splash" id="splash" role="status" aria-live="polite" aria-label="Preparando sua experiência">
+  <img class="splash__art" id="splashArt" src="/img/splash.jpg?v=9" alt="Disk Esfiha Jataí — Sabor que conquista!">
 </div>
 
 <header class="hdr">
@@ -222,6 +206,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script type="module" src="/js/app.js?v=8"></script>
+<script type="module" src="/js/app.js?v=9"></script>
 </body>
 </html>

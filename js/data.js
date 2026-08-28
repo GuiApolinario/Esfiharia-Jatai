@@ -7,7 +7,7 @@
    preços da tabela products e ignora qualquer preço vindo do navegador.
    ========================================================================== */
 
-import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=8';
+import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=9';
 
 const BUCKET = 'produtos';
 
@@ -353,10 +353,15 @@ export async function setProductGroups(productId, groupIds) {
 
 /* ------------------------------------------------------ painel: pedidos */
 
-export async function listOrders({ status = '', search = '', limit = 60 } = {}) {
-  let q = client().from('orders')
-    .select('*, order_items(*, order_item_addons(*))')
-    .order('created_at', { ascending: false }).limit(limit);
+/** byPickup: true ordena pelo horário de retirada (o que a cozinha precisa
+ *  preparar primeiro vem no topo); sem retirada definida, vai por último.
+ *  Padrão (false) mantém a ordem por mais recente, usada no resumo do Início. */
+export async function listOrders({ status = '', search = '', limit = 60, byPickup = false } = {}) {
+  let q = client().from('orders').select('*, order_items(*, order_item_addons(*))').limit(limit);
+
+  q = byPickup
+    ? q.order('pickup_at', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true })
+    : q.order('created_at', { ascending: false });
 
   if (status) q = q.eq('status', status);
   if (search) {

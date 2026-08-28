@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=8';
-import { fetchCatalog, createOrder } from './data.js?v=8';
-import * as cart from './cart.js?v=8';
-import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js?v=8';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=8';
+import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=9';
+import { fetchCatalog, createOrder } from './data.js?v=9';
+import * as cart from './cart.js?v=9';
+import { ESFIHA, placeholder } from './icons.js?v=9';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=9';
 
 const state = {
   store: null,
@@ -50,12 +50,15 @@ const splashInicio = Date.now();
 
 init();
 
+/** A arte já vem no HTML com preload; só falta revelar com fade-in assim que
+ *  o navegador confirmar que ela está pronta (evita o "flash" de tela vazia). */
 function pintaSplash() {
   document.body.classList.add('loading');
   const el = document.getElementById('splash');
-  if (JA_VIU) el?.classList.add('splash--quick');
   const art = document.getElementById('splashArt');
-  if (art) art.innerHTML = CENA_ESFIHAS;
+  const revela = () => el?.classList.add('is-in');
+  if (art?.complete) revela();
+  else art?.addEventListener('load', revela, { once: true });
 }
 
 async function fechaSplash() {
@@ -649,14 +652,19 @@ function showConfirmation(order) {
 }
 
 /** Mensagem do WhatsApp: cópia amigável. A fonte oficial é o banco. */
+// Linha separadora em ASCII puro: caracteres de "box drawing" (━) têm suporte
+// de fonte inconsistente em vários Android/WhatsApp e viram "?" na tela do
+// cliente — por isso nunca usar esse tipo de caractere numa mensagem de WhatsApp.
+const SEPARADOR = '--------------------------';
+
 function buildMessage(o) {
   const L = [
-    `🥟 *NOVO PEDIDO — ${state.store.name.toUpperCase()}*`,
+    `🥟 *NOVO PEDIDO - ${state.store.name.toUpperCase()}*`,
     '',
     `🧾 *Pedido:* ${o.code}`,
     `👤 *Cliente:* ${o.customer_name}`,
     `📱 *WhatsApp:* ${maskPhone(o.customer_phone)}`,
-    '━━━━━━━━━━━━━━',
+    SEPARADOR,
     '*PEDIDO*',
     '',
   ];
@@ -673,16 +681,16 @@ function buildMessage(o) {
   }
 
   L.push(
-    '━━━━━━━━━━━━━━',
+    SEPARADOR,
     `💰 *TOTAL CONFIRMADO PELO SISTEMA:*`,
     `*${money(o.total_cents)}*`,
     '',
-    `🛍️ *Retirada:* ${state.day && state.slot ? pickupLabel(state.day, state.slot) : 'a combinar'}`,
+    `🕒 *Retirada:* ${state.day && state.slot ? pickupLabel(state.day, state.slot) : 'a combinar'}`,
     `📍 ${state.store.address || 'Consultar endereço'}`,
   );
 
   if (o.notes) L.push('', `📝 *Observação:* ${o.notes}`);
-  L.push('', '━━━━━━━━━━━━━━', `✅ ${state.store.whatsapp_footer || 'Pedido registrado no sistema.'}`, `Pedido ${o.code}`);
+  L.push('', SEPARADOR, `✅ ${state.store.whatsapp_footer || 'Pedido registrado no sistema.'}`, `Pedido ${o.code}`);
 
   return L.join('\n');
 }

@@ -828,123 +828,26 @@ body.sheet-open .toast.is-on { transform: translate(-50%, 0); }
 .splash {
   position: fixed; inset: 0; z-index: 200;
   display: grid; place-items: center;
-  padding: 24px 20px calc(24px + var(--safe-b));
-  background:
-    radial-gradient(120% 80% at 50% 18%, #e01f2d 0%, #c8102e 45%, #9d0a22 100%);
-  color: #fff;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* Mesmos tons de vermelho da arte, para não sobrar borda branca em nenhuma proporção de tela. */
+  background: radial-gradient(120% 80% at 50% 18%, #7a0f1c 0%, #4a0a12 100%);
   overflow: hidden;
+  opacity: 0;
   transition: opacity .45s ease, visibility .45s;
 }
+/* Entrada suave assim que a imagem termina de carregar (ver preload no HTML). */
+.splash.is-in { opacity: 1; }
 .splash.is-out { opacity: 0; visibility: hidden; }
 
-.splash__in {
-  width: min(420px, 100%);
-  display: grid; justify-items: center;
-  text-align: center;
-  animation: splashUp .5s cubic-bezier(.2, .8, .3, 1) both;
+.splash__art {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
-@keyframes splashUp { from { opacity: 0; transform: translateY(14px); } }
-
-/* ------------------------------------------------------------------ logotipo */
-
-.splash__logo { display: grid; justify-items: center; line-height: 1; }
-
-/* Quando o dono envia o logotipo pelo painel, ele substitui o texto. */
-.splash__logo img { max-width: min(300px, 78vw); height: auto; }
-
-.splash__sup {
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: clamp(19px, 5.6vw, 26px);
-  letter-spacing: .01em;
-  color: #fdf1dc;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, .18);
-}
-
-.splash__name {
-  font-family: 'Lobster', var(--display), cursive;
-  font-size: clamp(58px, 17vw, 82px);
-  color: var(--accent);
-  margin-top: -2px;
-  text-shadow: 0 4px 0 #a8641a, 0 6px 14px rgba(0, 0, 0, .3);
-}
-
-.splash__swash { width: clamp(150px, 46vw, 210px); color: var(--accent); margin-top: -6px; }
-
-/* -------------------------------------------------------------------- cena */
-
-.splash__scene { position: relative; margin: 14px 0 4px; width: 100%; }
-.splash__art { width: 100%; height: auto; }
-
-.splash__steam path {
-  stroke-dasharray: 34;
-  animation: steam 2.6s ease-in-out infinite;
-}
-.splash__steam path:nth-child(2) { animation-delay: .5s; }
-.splash__steam path:nth-child(3) { animation-delay: 1s; }
-@keyframes steam {
-  0%   { stroke-dashoffset: 34; opacity: 0; }
-  35%  { opacity: .5; }
-  100% { stroke-dashoffset: -34; opacity: 0; }
-}
-
-.splash__heart {
-  position: absolute; top: 16%;
-  font-size: 24px; color: var(--accent);
-  animation: beat 1.7s ease-in-out infinite;
-}
-.splash__heart--l { left: 2%; }
-.splash__heart--r { right: 2%; animation-delay: .55s; }
-@keyframes beat { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.22); } }
-
-/* ------------------------------------------------------------------ textos */
-
-.splash__msg {
-  margin: 10px 0 12px;
-  font-size: clamp(15px, 4.2vw, 17px); font-weight: 700;
-  color: #fdf1dc;
-}
-.splash__dots i { font-style: normal; opacity: 0; animation: dot 1.4s infinite; }
-.splash__dots i:nth-child(2) { animation-delay: .2s; }
-.splash__dots i:nth-child(3) { animation-delay: .4s; }
-@keyframes dot { 0%, 60%, 100% { opacity: 0; } 30% { opacity: 1; } }
-
-.splash__bar {
-  width: min(280px, 74vw); height: 20px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, .22);
-  border: 3px solid #fdf1dc;
-  overflow: hidden;
-  padding: 2px;
-}
-.splash__bar span {
-  display: block; height: 100%; width: 8%;
-  border-radius: 999px;
-  background: repeating-linear-gradient(115deg,
-    var(--accent) 0 10px, #f7c65c 10px 20px);
-  animation: fill 2.2s cubic-bezier(.4, 0, .2, 1) forwards;
-}
-@keyframes fill { to { width: 100%; } }
-
-.splash__tag {
-  margin: 14px 0 0;
-  font-family: 'Lobster', var(--display), cursive;
-  font-size: clamp(19px, 5.4vw, 23px);
-  color: #fff;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, .25);
-}
-.splash__tag span { color: var(--accent); }
 
 /* Sem a tela na frente, o corpo volta a rolar. */
 body.loading { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
-  .splash__steam path, .splash__heart, .splash__dots i { animation: none; }
-  .splash__steam path { opacity: .35; stroke-dashoffset: 0; }
-  .splash__dots i { opacity: 1; }
-  .splash__bar span { animation: none; width: 100%; }
+  .splash { transition: none; }
 }
-
-/* Na volta dentro da mesma sessão a tela é só uma passagem rápida. */
-.splash--quick .splash__in { animation: none; }
-.splash--quick .splash__bar span { animation-duration: .5s; }
