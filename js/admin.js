@@ -3,9 +3,9 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=12';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=12';
-import * as data from './data.js?v=12';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=13';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=13';
+import * as data from './data.js?v=13';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -306,8 +306,8 @@ function listTicketHtml(rows) {
     const label = pickupGroupLabel(o);
     const group = label !== last ? `<div class="ticket__group">🕒 ${escapeHtml(label)}</div>` : '';
     last = label;
-    return group + ticketOrderBlock(o) + '<div class="ticket__hr"></div>';
-  }).join('');
+    return group + ticketOrderBlock(o);
+  }).join('<div class="ticket__hr"></div>');
 
   return `
     <div class="ticket__h">${escapeHtml(storeName.toUpperCase())}</div>
@@ -315,6 +315,7 @@ function listTicketHtml(rows) {
     <div class="ticket__v" style="text-align:center">${dateTimeBR(new Date())}</div>
     <div class="ticket__hr"></div>
     ${blocks}
+    <div class="ticket__hr"></div>
     <div class="ticket__item ticket__item--tot"><span>TOTAL GERAL</span><span>${money(totalGeral)}</span></div>
     <div class="ticket__foot">${rows.length} pedido(s)</div>`;
 }

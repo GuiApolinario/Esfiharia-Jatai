@@ -4,7 +4,7 @@
    se ela não vier (internet caindo, CDN fora do ar), o site mostra um aviso
    em vez de abrir uma página em branco. */
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=12';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=13';
 
 const LIBRARY_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/+esm';
 
