@@ -7,7 +7,7 @@
    preços da tabela products e ignora qualquer preço vindo do navegador.
    ========================================================================== */
 
-import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=10';
+import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=11';
 
 const BUCKET = 'produtos';
 
