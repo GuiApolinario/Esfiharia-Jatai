@@ -3,10 +3,10 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=16';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=16';
-import { ESFIHA } from './icons.js?v=16';
-import * as data from './data.js?v=16';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=17';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=17';
+import { ESFIHA } from './icons.js?v=17';
+import * as data from './data.js?v=17';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -88,15 +88,30 @@ const oops = (err) => { if (!guard(err)) toast(err.message, 'bad'); };
 
 /* ------------------------------------------------------------------ início */
 
+const REV_HIDE_KEY = 'jt_hide_revenue';
+let revenueHidden = localStorage.getItem(REV_HIDE_KEY) === '1';
+let lastStats = { ordersToday: 0, revenueToday: 0, available: 0, unavailable: 0 };
+
+/** "R$ ••••" no lugar do valor — pra deixar a tela aberta no balcão sem
+ *  exibir o valor arrecadado pra quem passar do lado. */
+function renderStats(stats) {
+  lastStats = stats;
+  $('#stats').innerHTML = `
+    <div class="stat"><div class="stat__l">Pedidos hoje</div><div class="stat__v">${stats.ordersToday}</div></div>
+    <div class="stat stat--brand">
+      <button class="stat__eye" type="button" id="revEye" aria-label="${revenueHidden ? 'Mostrar' : 'Ocultar'} valor de hoje" aria-pressed="${revenueHidden}">${revenueHidden ? '🙈' : '👁️'}</button>
+      <div class="stat__l">Valor hoje</div>
+      <div class="stat__v money">${revenueHidden ? 'R$ ••••' : money(stats.revenueToday)}</div>
+    </div>
+    <div class="stat"><div class="stat__l">Disponíveis</div><div class="stat__v">${stats.available}</div></div>
+    <div class="stat"><div class="stat__l">Esgotados</div><div class="stat__v">${stats.unavailable}</div></div>`;
+}
+
 async function loadHome() {
   try {
     const [stats, orders] = await Promise.all([data.dashboardStats(), data.listOrders({ limit: 8 })]);
     S.recentOrders = orders;
-    $('#stats').innerHTML = `
-      <div class="stat"><div class="stat__l">Pedidos hoje</div><div class="stat__v">${stats.ordersToday}</div></div>
-      <div class="stat stat--brand"><div class="stat__l">Valor hoje</div><div class="stat__v money">${money(stats.revenueToday)}</div></div>
-      <div class="stat"><div class="stat__l">Disponíveis</div><div class="stat__v">${stats.available}</div></div>
-      <div class="stat"><div class="stat__l">Esgotados</div><div class="stat__v">${stats.unavailable}</div></div>`;
+    renderStats(stats);
     $('#recent').innerHTML = orders.length ? orders.map(orderRow).join('')
       : `<div class="empty-box"><div class="empty-box__ic">🧾</div>Nenhum pedido ainda.</div>`;
   } catch (err) { oops(err); }
@@ -1107,6 +1122,13 @@ function bind() {
     fireOrderAlert({ customer_name: 'Pedido de teste', total_cents: 4590 });
   });
   $('#obannerClose').addEventListener('click', () => $('#obanner').classList.remove('is-on'));
+
+  $('#stats').addEventListener('click', (e) => {
+    if (!e.target.closest('#revEye')) return;
+    revenueHidden = !revenueHidden;
+    try { localStorage.setItem(REV_HIDE_KEY, revenueHidden ? '1' : '0'); } catch { /* modo privado etc. */ }
+    renderStats(lastStats);
+  });
   document.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeSheets(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheets(); });
 
