@@ -11,14 +11,38 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@500;600;700;800&display=swap">
 <!-- ?v=N muda a cada publicação, para o navegador não misturar HTML novo com JS/CSS antigo em cache -->
-<link rel="stylesheet" href="/css/styles.css?v=13">
-<link rel="stylesheet" href="/css/admin.css?v=13">
+<link rel="stylesheet" href="/css/styles.css?v=14">
+<link rel="stylesheet" href="/css/admin.css?v=14">
 </head>
 <body class="adm">
 
 <section class="login" id="login">
   <div class="login__card">
-    <div class="login__mark" aria-hidden="true">🥟</div>
+    <div class="login__mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64" class="ic" aria-hidden="true" focusable="false">
+        <defs>
+          <radialGradient id="esf-massa" cx="38%" cy="30%" r="78%">
+            <stop offset="0" stop-color="#f8dca6"/>
+            <stop offset=".62" stop-color="#eebc6f"/>
+            <stop offset="1" stop-color="#d99b45"/>
+          </radialGradient>
+          <radialGradient id="esf-recheio" cx="40%" cy="32%" r="72%">
+            <stop offset="0" stop-color="#b96a33"/>
+            <stop offset="1" stop-color="#783d1a"/>
+          </radialGradient>
+        </defs>
+        <path fill="url(#esf-massa)" d="M32 4.6c8.4-.2 15.2 2.6 20.6 7.7 5.4 5.2 8 11.8 7.7 19.9-.3 8-3.2 14.6-8.7 19.4C46.1 56.4 39.6 58.6 32 58.4c-7.8.2-14.4-2.2-19.8-7.1C6.8 46.4 4 39.8 4 31.8c0-8 2.6-14.6 7.9-19.7C17.1 7 23.8 4.5 32 4.6Z"/>
+        <path fill="#c98c3c" opacity=".45" d="M32 4.6c8.4-.2 15.2 2.6 20.6 7.7 5.4 5.2 8 11.8 7.7 19.9-.3 8-3.2 14.6-8.7 19.4C46.1 56.4 39.6 58.6 32 58.4c-7.8.2-14.4-2.2-19.8-7.1C6.8 46.4 4 39.8 4 31.8c0-8 2.6-14.6 7.9-19.7C17.1 7 23.8 4.5 32 4.6Zm0 5.2c-6.7 0-12.2 2-16.4 6.1-4.3 4.1-6.4 9.4-6.4 15.9 0 6.6 2.2 11.9 6.5 16 4.3 4 9.8 5.9 16.3 5.8 6.4.1 11.8-1.8 16.1-5.8 4.4-4.1 6.6-9.5 6.7-16.1 0-6.6-2-11.9-6.3-16-4.2-4-9.7-6-16.5-5.9Z"/>
+        <path fill="url(#esf-recheio)" d="M32 12.4c6.2-.1 11.3 1.7 15.2 5.5 3.9 3.7 5.8 8.4 5.7 14.1.1 5.7-1.8 10.4-5.8 14.1-3.9 3.6-9 5.4-15.1 5.3-6-.1-11-1.9-14.9-5.5-3.8-3.7-5.7-8.3-5.7-13.9 0-5.6 1.9-10.3 5.8-14 3.8-3.7 8.7-5.5 14.8-5.6Z"/>
+        <circle cx="24.5" cy="25.5" r="2.6" fill="#8f5127" opacity=".9"/>
+        <circle cx="38.5" cy="23.5" r="1.9" fill="#8f5127" opacity=".75"/>
+        <circle cx="41" cy="35" r="2.3" fill="#8f5127" opacity=".8"/>
+        <circle cx="30" cy="40" r="2.7" fill="#8f5127" opacity=".85"/>
+        <circle cx="22" cy="36" r="1.8" fill="#8f5127" opacity=".7"/>
+        <circle cx="32" cy="30" r="1.5" fill="#a35f2e" opacity=".65"/>
+        <ellipse cx="23" cy="19" rx="7" ry="3.6" fill="#fff" opacity=".18" transform="rotate(-24 23 19)"/>
+      </svg>
+    </div>
     <h1>Painel da Esfiharia</h1>
     <p class="login__sub">Entre para gerenciar o cardápio e os pedidos.</p>
     <div class="alert alert--bad" id="loginErr"></div>
@@ -39,7 +63,27 @@
 
 <div class="shell" id="shell">
   <header class="top">
-    <span class="top__n"><span aria-hidden="true">🥟</span> Esfiharia Jataí</span>
+    <span class="top__n"><span aria-hidden="true" style="display:inline-block;width:20px;height:20px">
+      <svg viewBox="0 0 64 64" class="ic" aria-hidden="true" focusable="false">
+        <defs>
+          <radialGradient id="esf2-massa" cx="38%" cy="30%" r="78%">
+            <stop offset="0" stop-color="#f8dca6"/>
+            <stop offset=".62" stop-color="#eebc6f"/>
+            <stop offset="1" stop-color="#d99b45"/>
+          </radialGradient>
+          <radialGradient id="esf2-recheio" cx="40%" cy="32%" r="72%">
+            <stop offset="0" stop-color="#b96a33"/>
+            <stop offset="1" stop-color="#783d1a"/>
+          </radialGradient>
+        </defs>
+        <path fill="url(#esf2-massa)" d="M32 4.6c8.4-.2 15.2 2.6 20.6 7.7 5.4 5.2 8 11.8 7.7 19.9-.3 8-3.2 14.6-8.7 19.4C46.1 56.4 39.6 58.6 32 58.4c-7.8.2-14.4-2.2-19.8-7.1C6.8 46.4 4 39.8 4 31.8c0-8 2.6-14.6 7.9-19.7C17.1 7 23.8 4.5 32 4.6Z"/>
+        <path fill="url(#esf2-recheio)" d="M32 12.4c6.2-.1 11.3 1.7 15.2 5.5 3.9 3.7 5.8 8.4 5.7 14.1.1 5.7-1.8 10.4-5.8 14.1-3.9 3.6-9 5.4-15.1 5.3-6-.1-11-1.9-14.9-5.5-3.8-3.7-5.7-8.3-5.7-13.9 0-5.6 1.9-10.3 5.8-14 3.8-3.7 8.7-5.5 14.8-5.6Z"/>
+        <circle cx="24.5" cy="25.5" r="2.6" fill="#8f5127" opacity=".9"/>
+        <circle cx="38.5" cy="23.5" r="1.9" fill="#8f5127" opacity=".75"/>
+        <circle cx="41" cy="35" r="2.3" fill="#8f5127" opacity=".8"/>
+        <circle cx="30" cy="40" r="2.7" fill="#8f5127" opacity=".85"/>
+      </svg>
+    </span> Esfiharia Jataí</span>
     <span class="top__u" id="who"></span>
     <a class="btn btn--line" href="/index.html" target="_blank" rel="noopener">Ver site ↗</a>
     <button class="btn btn--line" id="logout">Sair</button>
@@ -207,7 +251,7 @@
           <h3>Logotipo</h3>
           <p class="block__s">Aparece no topo do site. Quadrado funciona melhor.</p>
           <div class="up">
-            <div class="up__p" id="logoPrev" aria-hidden="true">🥟</div>
+            <div class="up__p" id="logoPrev" aria-hidden="true">📷</div>
             <div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="mini" type="button" id="logoPick">Escolher</button>
@@ -381,6 +425,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script type="module" src="/js/admin.js?v=13"></script>
+<script type="module" src="/js/admin.js?v=14"></script>
 </body>
 </html>

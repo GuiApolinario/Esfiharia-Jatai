@@ -6,7 +6,7 @@
 <title>Esfiharia Jataí | Peça pelo WhatsApp</title>
 <meta name="description" content="Escolha suas esfihas, bebidas e acompanhamentos, monte seu pedido e envie pelo WhatsApp. Retirada no local.">
 <meta name="theme-color" content="#c8102e">
-<link rel="icon" id="favicon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥟</text></svg>">
+<link rel="icon" id="favicon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path fill='%23eebc6f' d='M32 4.6c8.4-.2 15.2 2.6 20.6 7.7 5.4 5.2 8 11.8 7.7 19.9-.3 8-3.2 14.6-8.7 19.4C46.1 56.4 39.6 58.6 32 58.4c-7.8.2-14.4-2.2-19.8-7.1C6.8 46.4 4 39.8 4 31.8c0-8 2.6-14.6 7.9-19.7C17.1 7 23.8 4.5 32 4.6Z'/><path fill='%23b96a33' d='M32 12.4c6.2-.1 11.3 1.7 15.2 5.5 3.9 3.7 5.8 8.4 5.7 14.1.1 5.7-1.8 10.4-5.8 14.1-3.9 3.6-9 5.4-15.1 5.3-6-.1-11-1.9-14.9-5.5-3.8-3.7-5.7-8.3-5.7-13.9 0-5.6 1.9-10.3 5.8-14 3.8-3.7 8.7-5.5 14.8-5.6Z'/><circle cx='24.5' cy='25.5' r='2.8' fill='%238f5127'/><circle cx='39' cy='24' r='2.1' fill='%238f5127'/><circle cx='30' cy='40' r='2.9' fill='%238f5127'/></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Esfiharia Jataí | Peça pelo WhatsApp">
 <meta property="og:description" content="Monte seu pedido de esfihas e envie pelo WhatsApp. Retirada no local.">
@@ -15,20 +15,40 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Lobster&family=Manrope:wght@500;600;700;800&display=swap">
 <!-- Preload da arte da tela de carregamento, para ela já estar pronta assim que o HTML existir. -->
-<link rel="preload" as="image" href="/img/splash.jpg?v=13">
+<link rel="preload" as="image" href="/img/splash.jpg?v=14">
 <!-- ?v=N muda a cada publicação, para o navegador não misturar HTML novo com JS/CSS antigo em cache -->
-<link rel="stylesheet" href="/css/styles.css?v=13">
+<link rel="stylesheet" href="/css/styles.css?v=14">
 </head>
 <body>
 
 <!-- Tela de carregamento. Sai sozinha quando o cardápio termina de carregar. -->
 <div class="splash" id="splash" role="status" aria-live="polite" aria-label="Preparando sua experiência">
-  <img class="splash__art" id="splashArt" src="/img/splash.jpg?v=13" alt="Disk Esfiha Jataí — Sabor que conquista!">
+  <img class="splash__art" id="splashArt" src="/img/splash.jpg?v=14" alt="Disk Esfiha Jataí — Sabor que conquista!">
 </div>
 
 <header class="hdr">
   <div class="hdr__in">
-    <span class="hdr__mark" id="mark" aria-hidden="true">🥟</span>
+    <span class="hdr__mark" id="mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64" class="ic" aria-hidden="true" focusable="false">
+        <defs>
+          <radialGradient id="esf-massa" cx="38%" cy="30%" r="78%">
+            <stop offset="0" stop-color="#f8dca6"/>
+            <stop offset=".62" stop-color="#eebc6f"/>
+            <stop offset="1" stop-color="#d99b45"/>
+          </radialGradient>
+          <radialGradient id="esf-recheio" cx="40%" cy="32%" r="72%">
+            <stop offset="0" stop-color="#b96a33"/>
+            <stop offset="1" stop-color="#783d1a"/>
+          </radialGradient>
+        </defs>
+        <path fill="url(#esf-massa)" d="M32 4.6c8.4-.2 15.2 2.6 20.6 7.7 5.4 5.2 8 11.8 7.7 19.9-.3 8-3.2 14.6-8.7 19.4C46.1 56.4 39.6 58.6 32 58.4c-7.8.2-14.4-2.2-19.8-7.1C6.8 46.4 4 39.8 4 31.8c0-8 2.6-14.6 7.9-19.7C17.1 7 23.8 4.5 32 4.6Z"/>
+        <path fill="url(#esf-recheio)" d="M32 12.4c6.2-.1 11.3 1.7 15.2 5.5 3.9 3.7 5.8 8.4 5.7 14.1.1 5.7-1.8 10.4-5.8 14.1-3.9 3.6-9 5.4-15.1 5.3-6-.1-11-1.9-14.9-5.5-3.8-3.7-5.7-8.3-5.7-13.9 0-5.6 1.9-10.3 5.8-14 3.8-3.7 8.7-5.5 14.8-5.6Z"/>
+        <circle cx="24.5" cy="25.5" r="2.6" fill="#8f5127" opacity=".9"/>
+        <circle cx="38.5" cy="23.5" r="1.9" fill="#8f5127" opacity=".75"/>
+        <circle cx="41" cy="35" r="2.3" fill="#8f5127" opacity=".8"/>
+        <circle cx="30" cy="40" r="2.7" fill="#8f5127" opacity=".85"/>
+      </svg>
+    </span>
     <span class="hdr__name" id="storeName">Esfiharia Jataí</span>
     <span class="pill pill--closed" id="status">…</span>
   </div>
@@ -187,7 +207,7 @@
   <div class="sheet__b" style="padding-top:14px">
     <div class="done">
       <div class="done__ic" aria-hidden="true">✓</div>
-      <h2 id="okTitle">Tudo certo! 🥟</h2>
+      <h2 id="okTitle">Tudo certo! 🎉</h2>
       <p class="done__sub">Seu pedido foi registrado no nosso sistema.</p>
       <div class="code" id="okCode"><small>Pedido</small>—</div>
     </div>
@@ -206,6 +226,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script type="module" src="/js/app.js?v=13"></script>
+<script type="module" src="/js/app.js?v=14"></script>
 </body>
 </html>

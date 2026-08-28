@@ -721,8 +721,13 @@ textarea.in { min-height: 76px; resize: vertical; line-height: 1.45; }
 
 .empty { text-align: center; padding: 42px 16px; color: var(--ink-faint); }
 .empty__ic { font-size: 44px; margin-bottom: 10px; opacity: .55; }
+.empty__ic--svg { display: inline-block; width: 44px; height: 44px; margin-bottom: 10px; }
 .empty p { margin: 3px 0; font-size: 14.5px; }
 .empty strong { color: var(--ink); display: block; font-size: 16px; margin-bottom: 3px; }
+
+/* Ícones desenhados à mão (icons.js) não têm width/height próprios — preenchem
+   o contêiner que os recebe, do mesmo jeito que já fazemos com <img>. */
+.ic { display: block; width: 100%; height: 100%; }
 
 .skel {
   height: 108px; border-radius: var(--r);

@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=13';
-import { fetchCatalog, createOrder } from './data.js?v=13';
-import * as cart from './cart.js?v=13';
-import { ESFIHA, placeholder } from './icons.js?v=13';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=13';
+import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=14';
+import { fetchCatalog, createOrder } from './data.js?v=14';
+import * as cart from './cart.js?v=14';
+import { ESFIHA, placeholder } from './icons.js?v=14';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=14';
 
 const state = {
   store: null,
@@ -438,7 +438,7 @@ function renderCart() {
   if (!items.length) {
     body.innerHTML = `
       <div class="empty">
-        <div class="empty__ic">🥟</div>
+        <div class="empty__ic empty__ic--svg">${ESFIHA}</div>
         <strong>Seu pedido ainda está vazio.</strong>
         <p>Escolha suas esfihas no cardápio.</p>
         <p style="margin-top:14px"><button class="btn btn--brand" data-close>VER CARDÁPIO</button></p>

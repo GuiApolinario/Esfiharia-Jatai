@@ -53,7 +53,7 @@ declare
 begin
   ------------------------------------------------------------------ categorias
   for r in select * from (values
-    ('Salgadas',            '🥟', 1),
+    ('Salgadas',            '🫓', 1),
     ('Doces',               '🍫', 2),
     ('Refrigerantes 2L',    '🥤', 3),
     ('Refrigerantes Lata',  '🥫', 4),

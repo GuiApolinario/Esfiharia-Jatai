@@ -262,6 +262,7 @@ body.adm { background: #f5f1ee; }
   color: var(--ink-faint); font-size: 14px;
 }
 .empty-box__ic { font-size: 34px; margin-bottom: 8px; opacity: .55; }
+.empty-box__ic--svg { display: inline-block; width: 34px; height: 34px; margin-bottom: 8px; }
 
 .save {
   position: sticky; bottom: calc(70px + var(--safe-b)); z-index: 30;

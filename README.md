@@ -146,7 +146,7 @@ e situação. Toque em **📋 Lista completa** para abrir uma tabela com todos o
 - **🖨️ Imprimir** — abre a tela de impressão só com a lista, pronta para levar para a cozinha
 - **⬇️ Baixar CSV** — baixa uma planilha para abrir no Excel/Google Sheets
 
-## 🥟 Produtos
+## 🍽️ Produtos
 Cadastre esfihas e bebidas com **foto, nome, descrição, preço, unidade de venda e
 categoria**. A foto é reduzida no navegador antes de subir, para o cardápio carregar
 rápido no celular do cliente.

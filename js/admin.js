@@ -3,9 +3,10 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=13';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=13';
-import * as data from './data.js?v=13';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=14';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=14';
+import { ESFIHA } from './icons.js?v=14';
+import * as data from './data.js?v=14';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -462,7 +463,7 @@ function renderProducts() {
     const promo = p.promo_price_cents > 0 && p.promo_price_cents < p.price_cents;
     return `
     <article class="row ${p.available ? '' : 'off'}" data-p="${p.id}">
-      <div class="row__ph">${p.image ? `<img src="${escapeHtml(p.image)}" alt="" loading="lazy">` : '🥟'}</div>
+      <div class="row__ph">${p.image ? `<img src="${escapeHtml(p.image)}" alt="" loading="lazy">` : ESFIHA}</div>
       <div>
         <div class="row__t">${escapeHtml(p.name)}
           ${p.available ? '' : '<span class="tag tag--off">Esgotado</span>'}
@@ -481,7 +482,7 @@ function renderProducts() {
         <button class="mini mini--bad" data-del="${p.id}">Excluir</button>
       </div>
     </article>`;
-  }).join('') : `<div class="empty-box"><div class="empty-box__ic">🥟</div>
+  }).join('') : `<div class="empty-box"><div class="empty-box__ic--svg">${ESFIHA}</div>
       ${S.products.length ? 'Nenhum produto encontrado.' : 'Clique em “Novo” para começar o cardápio.'}</div>`;
 }
 
@@ -800,7 +801,7 @@ function renderSettings() {
   $('#cPrimary').value = s.primary_color || PADRAO.primary;
   $('#cAccent').value = s.accent_color || PADRAO.accent;
   S.logo = s.logo_url || '';
-  $('#logoPrev').innerHTML = S.logo ? `<img src="${escapeHtml(S.logo)}" alt="">` : '🥟';
+  $('#logoPrev').innerHTML = S.logo ? `<img src="${escapeHtml(S.logo)}" alt="">` : '📷';
   $('#logoDel').hidden = !S.logo;
 
   S.eventDays = (s.event_days || []).map((d) => ({ ...d }));
@@ -1015,7 +1016,7 @@ function bind() {
       $('#logoDel').hidden = false;
     }, '#logoPick', '#visErr').finally(() => { $('#logoFile').value = ''; }));
   $('#logoDel').addEventListener('click', () => {
-    S.logo = ''; $('#logoPrev').innerHTML = '🥟'; $('#logoDel').hidden = true;
+    S.logo = ''; $('#logoPrev').innerHTML = '📷'; $('#logoDel').hidden = true;
   });
 
   // Categorias
