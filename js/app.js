@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=7';
-import { fetchCatalog, createOrder } from './data.js?v=7';
-import * as cart from './cart.js?v=7';
-import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js?v=7';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=7';
+import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=8';
+import { fetchCatalog, createOrder } from './data.js?v=8';
+import * as cart from './cart.js?v=8';
+import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js?v=8';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=8';
 
 const state = {
   store: null,
@@ -319,7 +319,11 @@ function openOptions(product) {
   $('#optTitle').textContent = product.name;
   $('#optBody').innerHTML = `
     <p style="margin:0 0 16px;color:var(--ink-soft);font-size:14px">${escapeHtml(product.description || '')}</p>
-    ${product.addonGroups.map(groupBlock).join('')}`;
+    ${product.addonGroups.map(groupBlock).join('')}
+    <div class="f" style="margin-top:6px">
+      <label for="optNotes">Observações para esta esfiha <span class="f__hint">(opcional)</span></label>
+      <textarea class="in" id="optNotes" maxlength="200" placeholder="Ex.: sem cebola, bem passada…"></textarea>
+    </div>`;
 
   updateOptButton();
   openSheet('#optSheet');
@@ -393,7 +397,8 @@ function missingRequired() {
 function confirmOptions() {
   const missing = missingRequired();
   if (missing) return toast(`Escolha uma opção em "${missing.name}".`, 'bad');
-  cart.add(state.opt, { addons: pickedAddons() });
+  const notes = $('#optNotes')?.value.trim() || '';
+  cart.add(state.opt, { addons: pickedAddons(), notes });
   closeSheets();
   toast(`${state.opt.name} adicionada`, 'ok');
 }
@@ -447,6 +452,7 @@ function renderCart() {
         <div class="crow__n">${escapeHtml(i.name)}</div>
         <div class="crow__m money">${money(i.unitPriceCents)} cada</div>
         ${i.addons?.length ? `<div class="crow__add">+ ${i.addons.map((a) => escapeHtml(a.name)).join(', ')}</div>` : ''}
+        ${i.notes ? `<div class="crow__m">📝 ${escapeHtml(i.notes)}</div>` : ''}
       </div>
       <div class="crow__s">
         <span class="crow__p money">${money(cart.lineTotal(i))}</span>
@@ -632,7 +638,7 @@ function showConfirmation(order) {
   $('#okSum').innerHTML = `
     ${order.items.map((i) => `
       <div class="sum__r">
-        <span>${i.quantity}× ${escapeHtml(i.name)}${i.addons?.length ? `<br><small style="color:var(--ink-faint)">+ ${i.addons.map((a) => escapeHtml(a.name)).join(', ')}</small>` : ''}</span>
+        <span>${i.quantity}× ${escapeHtml(i.name)}${i.addons?.length ? `<br><small style="color:var(--ink-faint)">+ ${i.addons.map((a) => escapeHtml(a.name)).join(', ')}</small>` : ''}${i.notes ? `<br><small style="color:var(--ink-faint)">📝 ${escapeHtml(i.notes)}</small>` : ''}</span>
         <span class="money">${money(i.subtotal_cents)}</span>
       </div>`).join('')}
     <div class="sum__r sum__r--tot"><span>Total</span><b class="money">${money(order.total_cents)}</b></div>`;

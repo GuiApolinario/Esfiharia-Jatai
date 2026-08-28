@@ -628,17 +628,17 @@ textarea.in { min-height: 76px; resize: vertical; line-height: 1.45; }
 
 /* ---------------------------------------------------------- adicionais */
 
-.agroup { margin-bottom: 16px; }
-.agroup__h { display: flex; align-items: baseline; gap: 7px; margin-bottom: 8px; }
-.agroup__h h4 { font-size: 15px; font-family: var(--ui); font-weight: 800; }
-.agroup__r { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); }
+.agroup { margin-bottom: 18px; }
+.agroup__h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.agroup__h h4 { font-size: 17px; font-family: var(--ui); font-weight: 800; }
+.agroup__r { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); }
 .agroup__r.req { color: var(--brand); }
 
 .aopt {
-  display: flex; align-items: center; gap: 11px;
+  display: flex; align-items: center; gap: 13px;
   min-height: var(--tap);
-  padding: 9px 12px;
-  margin-bottom: 6px;
+  padding: 13px 14px;
+  margin-bottom: 8px;
   background: var(--surface);
   border: 1.5px solid var(--line);
   border-radius: var(--r-sm);
@@ -649,21 +649,21 @@ textarea.in { min-height: 76px; resize: vertical; line-height: 1.45; }
 .aopt input { position: absolute; opacity: 0; width: 0; height: 0; }
 
 .aopt__box {
-  width: 22px; height: 22px; flex: none;
-  border: 2px solid var(--line);
-  border-radius: 6px;
+  width: 27px; height: 27px; flex: none;
+  border: 2.5px solid var(--line);
+  border-radius: 7px;
   display: grid; place-items: center;
   background: #fff;
   transition: all .15s;
 }
 .aopt.is-on .aopt__box { background: var(--brand); border-color: var(--brand); }
 .aopt.is-on .aopt__box::after {
-  content: ''; width: 5px; height: 10px;
-  border: solid #fff; border-width: 0 2.5px 2.5px 0;
+  content: ''; width: 6px; height: 12px;
+  border: solid #fff; border-width: 0 3px 3px 0;
   transform: rotate(43deg) translate(-1px, -1px);
 }
-.aopt__n { flex: 1; font-size: 14.5px; font-weight: 600; }
-.aopt__p { font-size: 13.5px; font-weight: 800; color: var(--brand); }
+.aopt__n { flex: 1; font-size: 16.5px; font-weight: 700; color: var(--ink); }
+.aopt__p { font-size: 15px; font-weight: 800; color: var(--brand); }
 .aopt__p.free { color: var(--ok); }
 
 /* --------------------------------------------------------------- resumo */
