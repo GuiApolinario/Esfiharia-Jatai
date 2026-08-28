@@ -7,7 +7,7 @@
    preços da tabela products e ignora qualquer preço vindo do navegador.
    ========================================================================== */
 
-import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=6';
+import { supabase, isConfigured, SETUP_MESSAGE, OFFLINE_MESSAGE } from './supabase.js?v=7';
 
 const BUCKET = 'produtos';
 
@@ -256,14 +256,22 @@ export async function createCategory(c) {
 }
 
 export async function updateCategory(id, patch) {
-  const { data, error } = await client().from('categories').update(patch).eq('id', id).select().single();
+  const db = client();
+  if (patch.icon !== undefined) {
+    const { data: cur } = await db.from('categories').select('icon').eq('id', id).single();
+    if (cur?.icon && cur.icon !== patch.icon && /^https?:\/\//.test(cur.icon)) removeImage(cur.icon);
+  }
+  const { data, error } = await db.from('categories').update(patch).eq('id', id).select().single();
   if (error) fail(error, 'Não foi possível salvar a categoria.');
   return data;
 }
 
 export async function deleteCategory(id) {
-  const { error } = await client().from('categories').delete().eq('id', id);
+  const db = client();
+  const { data: cur } = await db.from('categories').select('icon').eq('id', id).single();
+  const { error } = await db.from('categories').delete().eq('id', id);
   if (error) fail(error, 'Não foi possível excluir a categoria.');
+  if (cur?.icon && /^https?:\/\//.test(cur.icon)) removeImage(cur.icon);
 }
 
 /* --------------------------------------------------- painel: adicionais */

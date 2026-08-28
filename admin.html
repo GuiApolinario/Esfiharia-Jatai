@@ -11,8 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@500;600;700;800&display=swap">
 <!-- ?v=N muda a cada publicação, para o navegador não misturar HTML novo com JS/CSS antigo em cache -->
-<link rel="stylesheet" href="/css/styles.css?v=6">
-<link rel="stylesheet" href="/css/admin.css?v=6">
+<link rel="stylesheet" href="/css/styles.css?v=7">
+<link rel="stylesheet" href="/css/admin.css?v=7">
 </head>
 <body class="adm">
 
@@ -300,9 +300,23 @@
   <div class="sheet__h"><h2 id="cTitle">Nova categoria</h2><button class="iconbtn" data-close aria-label="Fechar">✕</button></div>
   <form class="sheet__b" id="cForm">
     <div class="alert alert--bad" id="cErr"></div>
+    <div class="f">
+      <span class="f__l">Ícone</span>
+      <div class="up">
+        <div class="up__p" id="cIconPrev" aria-hidden="true">🗂️</div>
+        <div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="mini" type="button" id="cIconPick">Escolher foto</button>
+            <button class="mini mini--bad" type="button" id="cIconDel" hidden>Remover foto</button>
+          </div>
+          <p class="up__h">Uma foto enviada aqui substitui o emoji digitado abaixo.</p>
+          <input type="file" id="cIconFile" accept="image/*" hidden>
+        </div>
+      </div>
+    </div>
     <div class="grid2">
       <div class="f"><label for="cName">Nome</label><input class="in" id="cName" type="text" required></div>
-      <div class="f"><label for="cIcon">Ícone <span class="f__hint">(emoji)</span></label><input class="in" id="cIcon" type="text" maxlength="4"></div>
+      <div class="f"><label for="cIcon">Emoji <span class="f__hint">(se não enviar foto)</span></label><input class="in" id="cIcon" type="text" maxlength="4"></div>
       <div class="f"><label for="cOrder">Ordem</label><input class="in" id="cOrder" type="number" step="1"></div>
     </div>
     <div class="f"><label class="sw"><input type="checkbox" id="cActive" checked><span class="sw__t"></span><span>Ativa</span></label></div>
@@ -364,6 +378,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script type="module" src="/js/admin.js?v=6"></script>
+<script type="module" src="/js/admin.js?v=7"></script>
 </body>
 </html>

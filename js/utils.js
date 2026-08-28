@@ -77,6 +77,20 @@ export function shrinkImage(file, maxSize = 1000, quality = 0.82) {
   });
 }
 
+/** O ícone da categoria aceita um emoji digitado OU uma foto enviada no painel. */
+export const isImageIcon = (value) => {
+  const v = String(value || '').trim();
+  return /^https?:\/\//.test(v) || v.startsWith('data:image');
+};
+
+/** Emoji vira texto puro; foto vira <img> do tamanho da fonte ao redor. */
+export function categoryIconHtml(icon, fallback) {
+  const v = String(icon || '').trim();
+  if (!v) return escapeHtml(fallback);
+  if (isImageIcon(v)) return `<img class="cat-ic" src="${escapeHtml(v)}" alt="">`;
+  return escapeHtml(v);
+}
+
 /** 20/08/2026 20:45 */
 export function dateTimeBR(value) {
   if (!value) return '—';

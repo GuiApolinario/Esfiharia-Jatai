@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=6';
-import { fetchCatalog, createOrder } from './data.js?v=6';
-import * as cart from './cart.js?v=6';
-import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js?v=6';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=6';
+import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=7';
+import { fetchCatalog, createOrder } from './data.js?v=7';
+import * as cart from './cart.js?v=7';
+import { CENA_ESFIHAS, ESFIHA, placeholder } from './icons.js?v=7';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=7';
 
 const state = {
   store: null,
@@ -234,14 +234,14 @@ function renderMenu() {
   }
 
   $('#cats').innerHTML = groups
-    .map((g) => `<button class="cats__item" data-cat="${g.id}">${g.icon || '🍽️'} ${escapeHtml(g.name)}</button>`)
+    .map((g) => `<button class="cats__item" data-cat="${g.id}">${categoryIconHtml(g.icon, '🍽️')} ${escapeHtml(g.name)}</button>`)
     .join('');
 
   $('#menu').innerHTML = groups
     .map((g) => `
       <section class="sec" id="sec-${g.id}">
         <div class="sec__h">
-          <h2>${g.icon || '🍽️'} ${escapeHtml(g.name)}</h2>
+          <h2>${categoryIconHtml(g.icon, '🍽️')} ${escapeHtml(g.name)}</h2>
           <span>${g.products.length}</span>
         </div>
         <div class="list">${g.products.map(card).join('')}</div>

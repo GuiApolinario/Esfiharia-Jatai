@@ -249,6 +249,10 @@ a { color: inherit; }
   background: var(--brand); border-color: var(--brand); color: #fff;
 }
 
+/* Ícone de categoria: emoji digitado ou foto enviada no painel, ambos do
+   tamanho da fonte ao redor (chip, título de seção, linha do painel). */
+.cat-ic { width: 1.15em; height: 1.15em; object-fit: cover; border-radius: 4px; vertical-align: -0.2em; display: inline-block; }
+
 /* ------------------------------------------------------------------ seções */
 
 .sec { padding-top: 22px; scroll-margin-top: calc(var(--header-h) + 60px); }

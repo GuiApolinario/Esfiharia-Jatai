@@ -3,9 +3,9 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, dateTimeBR, escapeHtml, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=6';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=6';
-import * as data from './data.js?v=6';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=7';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=7';
+import * as data from './data.js?v=7';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -23,6 +23,7 @@ const S = {
   editG: null,
   pImage: '',
   logo: '',
+  cIcon: '',
   gItems: [],
   eventDays: [],
 };
@@ -495,7 +496,7 @@ async function loadCats() {
     S.cats = await data.listCategories();
     $('#cats').innerHTML = S.cats.length ? S.cats.map((c) => `
       <article class="row ${c.active ? '' : 'off'}" data-c="${c.id}">
-        <div class="row__ph" style="font-size:24px">${escapeHtml(c.icon || '🗂️')}</div>
+        <div class="row__ph" style="font-size:24px">${categoryIconHtml(c.icon, '🗂️')}</div>
         <div>
           <div class="row__t">${escapeHtml(c.name)} ${c.active ? '' : '<span class="tag tag--off">Oculta</span>'}</div>
           <div class="row__m"><span>${c.product_count} produtos</span><span>ordem ${c.sort_order}</span></div>
@@ -516,20 +517,30 @@ async function loadCats() {
 
 function openCat(c = null) {
   S.editC = c?.id ?? null;
+  S.cIcon = c?.icon && isImageIcon(c.icon) ? c.icon : '';
   $('#cTitle').textContent = c ? 'Editar categoria' : 'Nova categoria';
   $('#cName').value = c?.name || '';
-  $('#cIcon').value = c?.icon || '';
+  $('#cIcon').value = c?.icon && !isImageIcon(c.icon) ? c.icon : '';
   $('#cOrder').value = c?.sort_order ?? '';
   $('#cActive').checked = c ? Boolean(c.active) : true;
+  previewCatIcon();
   hideAlert('#cErr');
   openSheet('#cSheet');
+}
+
+/** Uma foto enviada substitui o emoji digitado. */
+function previewCatIcon() {
+  $('#cIconPrev').innerHTML = S.cIcon
+    ? `<img src="${escapeHtml(S.cIcon)}" alt="">`
+    : escapeHtml($('#cIcon').value.trim() || '🗂️');
+  $('#cIconDel').hidden = !S.cIcon;
 }
 
 async function saveCat(e) {
   e.preventDefault();
   const name = $('#cName').value.trim();
   if (!name) return showAlert('#cErr', 'Informe o nome da categoria.');
-  const payload = { name, icon: $('#cIcon').value.trim(), active: $('#cActive').checked };
+  const payload = { name, icon: S.cIcon || $('#cIcon').value.trim(), active: $('#cActive').checked };
   const ord = $('#cOrder').value;
   if (ord !== '') payload.sort_order = Number(ord);
   try {
@@ -898,6 +909,12 @@ function bind() {
     const de = e.target.closest('[data-dc]');
     if (de) return delCat(Number(de.dataset.dc));
   });
+  $('#cIcon').addEventListener('input', () => { if (!S.cIcon) previewCatIcon(); });
+  $('#cIconPick').addEventListener('click', () => $('#cIconFile').click());
+  $('#cIconFile').addEventListener('change', (e) =>
+    upload(e.target.files?.[0], (url) => { S.cIcon = url; previewCatIcon(); }, '#cIconPick', '#cErr')
+      .finally(() => { $('#cIconFile').value = ''; }));
+  $('#cIconDel').addEventListener('click', () => { S.cIcon = ''; previewCatIcon(); });
 
   // Grupos de adicionais
   $('#newGroup').addEventListener('click', () => openGroup());
