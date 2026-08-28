@@ -3,10 +3,10 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=17';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=17';
-import { ESFIHA } from './icons.js?v=17';
-import * as data from './data.js?v=17';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=18';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=18';
+import { ESFIHA } from './icons.js?v=18';
+import * as data from './data.js?v=18';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
