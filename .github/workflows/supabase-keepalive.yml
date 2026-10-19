@@ -1,0 +1,43 @@
+name: Supabase keepalive
+
+# O plano gratuito do Supabase pausa o projeto depois de um tempo sem
+# nenhuma requisição à API. Esse job faz uma leitura bem leve (e pública —
+# usa a mesma chave "publishable" que já fica exposta no site) a cada
+# poucos dias, só para contar como atividade e o banco nunca pausar.
+on:
+  schedule:
+    # Segunda e quinta, 9h UTC — intervalo máximo de 4 dias entre pings.
+    - cron: '0 9 * * 1,4'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ping do Supabase
+        run: |
+          set -eu
+          URL=$(grep -oP "(?<=SUPABASE_URL = ')[^']+" js/config.js)
+          KEY=$(grep -oP "(?<=SUPABASE_ANON_KEY = ')[^']+" js/config.js)
+
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "Não consegui ler SUPABASE_URL/SUPABASE_ANON_KEY de js/config.js" >&2
+            exit 1
+          fi
+
+          code=$(curl -sS -o /tmp/resp.json -w '%{http_code}' \
+            "$URL/rest/v1/settings?select=key&limit=1" \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY")
+
+          echo "HTTP $code"
+          cat /tmp/resp.json
+
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "Supabase não respondeu OK — verifique se o projeto não foi pausado ou excluído." >&2
+            exit 1
+          fi
+
+          echo "Banco respondeu normalmente, segue ativo."
