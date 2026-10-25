@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=19';
-import { fetchCatalog, createOrder } from './data.js?v=19';
-import * as cart from './cart.js?v=19';
-import { ESFIHA, placeholder } from './icons.js?v=19';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=19';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=20';
+import { fetchCatalog, createOrder } from './data.js?v=20';
+import * as cart from './cart.js?v=20';
+import { ESFIHA, placeholder } from './icons.js?v=20';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=20';
 
 const state = {
   store: null,
@@ -546,7 +546,8 @@ function renderTimes() {
 }
 
 function renderSummary() {
-  const pickup = state.day && state.slot ? pickupLabel(state.day, state.slot) : 'Escolha dia e horário';
+  const pickup = state.day && state.slot ? pickupLabel(state.day, state.slot)
+    : state.store.pickup_enabled ? 'Escolha dia e horário' : 'A combinar';
   const note = state.store.prep_time_note;
 
   $('#coSum').innerHTML = `
@@ -662,19 +663,25 @@ function showConfirmation(order) {
   setTimeout(() => openSheet('#okSheet'), 220);
 }
 
+/** Uma linha de item do recibo — reaproveitada pelo recibo final (já
+ *  enviado) e pelo rascunho (ainda no carrinho, antes de enviar). */
+function ticketItemHtml({ qty, name, addons, notes, cents }) {
+  const addonsText = (addons || []).map((a) => a.name).join(', ');
+  return `
+      <div class="ticket__item">
+        <span>${qty}x ${escapeHtml(name)}</span>
+        <span>${money(cents)}</span>
+      </div>
+      ${addonsText ? `<div class="ticket__sub">+ ${escapeHtml(addonsText)}</div>` : ''}
+      ${notes ? `<div class="ticket__sub">obs: ${escapeHtml(notes)}</div>` : ''}`;
+}
+
 /** Recibo do cliente no mesmo formato de cupom usado no painel — mesmas
  *  classes .ticket__*, estilo compartilhado em styles.css. */
 function ticketHtml(order) {
-  const items = order.items.map((i) => {
-    const addons = (i.addons || []).map((a) => a.name).join(', ');
-    return `
-      <div class="ticket__item">
-        <span>${i.quantity}x ${escapeHtml(i.name)}</span>
-        <span>${money(i.subtotal_cents)}</span>
-      </div>
-      ${addons ? `<div class="ticket__sub">+ ${escapeHtml(addons)}</div>` : ''}
-      ${i.notes ? `<div class="ticket__sub">obs: ${escapeHtml(i.notes)}</div>` : ''}`;
-  }).join('');
+  const items = order.items.map((i) => ticketItemHtml({
+    qty: i.quantity, name: i.name, addons: i.addons, notes: i.notes, cents: i.subtotal_cents,
+  })).join('');
 
   return `
     <div class="ticket__h">${escapeHtml(state.store.name.toUpperCase())}</div>
@@ -692,6 +699,42 @@ function ticketHtml(order) {
     <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(order.total_cents)}</span></div>
     <div class="ticket__hr"></div>
     <div class="ticket__foot">Pedido ${escapeHtml(order.code)} · ${dateTimeBR(order.created_at)}</div>`;
+}
+
+/** Rascunho do recibo ANTES de enviar — direto do carrinho e do formulário,
+ *  pra imprimir já na tela "Seus dados" (sem precisar esperar o envio). */
+function draftTicketHtml() {
+  const items = cart.getItems().map((i) => ticketItemHtml({
+    qty: i.qty, name: i.name, addons: i.addons, notes: i.notes, cents: cart.lineTotal(i),
+  })).join('');
+
+  const name = $('#cName').value.trim();
+  const phone = $('#cPhone').value.trim();
+  const notes = $('#cNotes').value.trim();
+  const pickup = state.store.pickup_enabled && state.day && state.slot ? pickupLabel(state.day, state.slot) : 'A combinar';
+
+  return `
+    <div class="ticket__h">${escapeHtml(state.store.name.toUpperCase())}</div>
+    <div class="ticket__v" style="text-align:center">RASCUNHO — AINDA NÃO ENVIADO</div>
+    <div class="ticket__hr"></div>
+    <div class="ticket__label">Cliente</div>
+    <div class="ticket__big">${escapeHtml(name || 'Cliente')}</div>
+    ${phone ? `<div class="ticket__label">Telefone</div><div class="ticket__v">${maskPhone(phone)}</div>` : ''}
+    <div class="ticket__label">Retirada</div>
+    <div class="ticket__v ticket__v--big">${escapeHtml(pickup)}</div>
+    <div class="ticket__hr"></div>
+    ${items}
+    ${notes ? `<div class="ticket__hr"></div><div class="ticket__label">Observações</div><div class="ticket__v">${escapeHtml(notes)}</div>` : ''}
+    <div class="ticket__hr"></div>
+    <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(cart.totalCents())}</span></div>`;
+}
+
+function printDraftTicket() {
+  if (cart.isEmpty()) return toast('Adicione ao menos um item.', 'bad');
+  $('#printTicket').innerHTML = draftTicketHtml();
+  document.body.classList.add('print-ticket');
+  window.print();
+  document.body.classList.remove('print-ticket');
 }
 
 function printOrderTicket() {
@@ -869,6 +912,7 @@ function bind() {
 
   $('#cPhone').addEventListener('input', (e) => { e.target.value = maskPhone(e.target.value); });
   $('#coForm').addEventListener('submit', submit);
+  $('#coPrint').addEventListener('click', printDraftTicket);
 
   $('#okGo').addEventListener('click', () => {
     setTimeout(() => { cart.clear(); state.token = null; }, 400);
