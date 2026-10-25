@@ -333,10 +333,13 @@ begin
   -- O site é usado por festivais: a retirada precisa cair num dos dias de
   -- evento cadastrados, e o pedido precisa estar dentro do prazo (o painel
   -- define quantos dias antes do evento os pedidos param de ser aceitos).
-  -- Sem dias de evento cadastrados, mantém o comportamento antigo (livre).
+  -- Sem dias de evento cadastrados, ou com "pickup_enabled" desligado no
+  -- painel (loja não quer perguntar dia/horário), mantém o comportamento
+  -- livre: pickup_at fica nulo e o pedido vai "a combinar".
   -- ---------------------------------------------------------------------
   v_dias_evento := coalesce(nullif(public.get_setting('event_days', '[]'), '')::jsonb, '[]'::jsonb);
-  if jsonb_typeof(v_dias_evento) = 'array' and jsonb_array_length(v_dias_evento) > 0 then
+  if coalesce(nullif(public.get_setting('pickup_enabled', 'true'), '')::boolean, true)
+     and jsonb_typeof(v_dias_evento) = 'array' and jsonb_array_length(v_dias_evento) > 0 then
     if p_pickup_at is null then
       raise exception 'Escolha o dia e o horário de retirada.' using errcode = 'P0001';
     end if;

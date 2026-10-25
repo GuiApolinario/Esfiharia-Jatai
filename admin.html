@@ -11,8 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@500;600;700;800&display=swap">
 <!-- ?v=N muda a cada publicação, para o navegador não misturar HTML novo com JS/CSS antigo em cache -->
-<link rel="stylesheet" href="/css/styles.css?v=18">
-<link rel="stylesheet" href="/css/admin.css?v=18">
+<link rel="stylesheet" href="/css/styles.css?v=19">
+<link rel="stylesheet" href="/css/admin.css?v=19">
 </head>
 <body class="adm">
 
@@ -279,6 +279,8 @@
         <div class="block">
           <h3>Regras da retirada</h3>
           <p class="block__s">Os pedidos param de ser aceitos alguns dias antes de cada evento, para dar tempo de organizar a produção.</p>
+          <label class="sw" style="margin-bottom:14px"><input type="checkbox" id="pickupEnabled"><span class="sw__t"></span><span>Perguntar dia e horário de retirada no checkout</span></label>
+          <p class="block__s" id="pickupEnabledHint" style="margin-top:-8px">Desligado: o cliente não escolhe dia nem horário — o pedido vai como "a combinar".</p>
           <div class="grid2">
             <div class="f"><label for="lead">Preparo mínimo <span class="f__hint">(min)</span></label><input class="in" id="lead" type="number" min="0" max="480" step="5" required></div>
             <div class="f"><label for="slot">Intervalo entre horários <span class="f__hint">(min)</span></label><input class="in" id="slot" type="number" min="5" max="120" step="5" required></div>
@@ -498,6 +500,6 @@
   <button class="obanner__x" type="button" id="obannerClose" aria-label="Fechar aviso">✕</button>
 </div>
 
-<script type="module" src="/js/admin.js?v=18"></script>
+<script type="module" src="/js/admin.js?v=19"></script>
 </body>
 </html>

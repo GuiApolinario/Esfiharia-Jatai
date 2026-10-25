@@ -864,3 +864,45 @@ body.loading { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .splash { transition: none; }
 }
+
+/* -------------------------------------------------------- recibo de impressão
+   Compartilhado entre o site (recibo do cliente) e o painel (recibo de cada
+   pedido e a lista completa) — mesmo formato estreito de cupom térmico.
+   Texto todo em negrito para facilitar a leitura na impressora; o que já era
+   negrito (títulos, nome do cliente, total) fica maior ainda, pra se destacar
+   do resto. */
+
+/* Some da tela normal; só existe na hora de imprimir. */
+#printTicket { display: none; }
+
+.ticket__h { font-size: 17px; font-weight: 800; text-align: center; letter-spacing: .02em; }
+.ticket__hr { border-top: 1px dashed #000; margin: 8px 0; }
+.ticket__label { font-size: 12.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; margin-top: 6px; }
+.ticket__big { font-size: 20px; font-weight: 800; }
+.ticket__v { font-size: 13.5px; font-weight: 700; }
+.ticket__v--big { font-size: 17px; font-weight: 800; }
+.ticket__item { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; font-weight: 700; padding: 5px 0; }
+.ticket__item--tot { font-size: 18px; font-weight: 800; padding-top: 7px; }
+.ticket__sub { font-size: 11.5px; font-weight: 700; color: #444; padding: 0 0 5px 8px; }
+.ticket__foot { margin-top: 8px; font-size: 10.5px; font-weight: 700; color: #444; text-align: center; }
+
+/* Cabeçalho de horário e bloco de cada pedido dentro da Lista completa —
+   espaço generoso entre um pedido e outro, pra não embolar na leitura. */
+.ticket__group { font-size: 14px; font-weight: 800; text-transform: uppercase; margin: 18px 0 6px; }
+.ticket__block { margin-bottom: 14px; }
+.ticket__block .ticket__big { font-size: 16px; }
+
+@media print {
+  @page { size: portrait; margin: 8mm; }
+
+  /* Esconde TUDO (site ou painel, menus, botões) e mostra só o recibo —
+     nunca a página inteira. display:none (não visibility) evita qualquer
+     sobra de layout de baixo, que era o que deixava a folha em branco. */
+  body.print-ticket > *:not(#printTicket) { display: none !important; }
+  body.print-ticket #printTicket {
+    display: block !important;
+    width: 100%; max-width: 320px;
+    font-family: 'Courier New', ui-monospace, monospace;
+    color: #000; background: #fff;
+  }
+}

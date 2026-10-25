@@ -3,10 +3,10 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=18';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=18';
-import { ESFIHA } from './icons.js?v=18';
-import * as data from './data.js?v=18';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=19';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=19';
+import { ESFIHA } from './icons.js?v=19';
+import * as data from './data.js?v=19';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -942,6 +942,7 @@ function renderSettings() {
   $('#accepting').checked = s.accepting_orders;
   $('#acceptingL').textContent = s.accepting_orders ? 'Aceitando pedidos' : 'Pedidos pausados';
   $('#closedMsg').value = s.closed_message;
+  $('#pickupEnabled').checked = s.pickup_enabled;
   $('#lead').value = s.lead_minutes;
   $('#slot').value = s.slot_minutes;
   $('#cutoff').value = s.order_cutoff_days;
@@ -1002,6 +1003,7 @@ async function saveSettings(e) {
       announcement_active: $('#annOn').checked,
       accepting_orders: $('#accepting').checked,
       closed_message: $('#closedMsg').value.trim(),
+      pickup_enabled: $('#pickupEnabled').checked,
       lead_minutes: Number($('#lead').value) || 0,
       slot_minutes: Number($('#slot').value) || 15,
       order_cutoff_days: Number($('#cutoff').value) || 0,

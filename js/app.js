@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=18';
-import { fetchCatalog, createOrder } from './data.js?v=18';
-import * as cart from './cart.js?v=18';
-import { ESFIHA, placeholder } from './icons.js?v=18';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=18';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=19';
+import { fetchCatalog, createOrder } from './data.js?v=19';
+import * as cart from './cart.js?v=19';
+import { ESFIHA, placeholder } from './icons.js?v=19';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=19';
 
 const state = {
   store: null,
@@ -504,16 +504,26 @@ function openCheckout() {
   const min = state.store.min_order_cents || 0;
   if (min && cart.totalCents() < min) return toast(`O pedido mínimo é de ${money(min)}.`, 'bad');
 
-  state.days = availableDays(state.store);
-  if (!state.days.length) return toast('Sem horários disponíveis. Fale com a gente no WhatsApp.', 'bad');
+  // Dono pode desligar a pergunta de dia/horário no painel — o campo some
+  // do checkout e o pedido vai "a combinar" pelo WhatsApp.
+  $('#fDate').hidden = !state.store.pickup_enabled;
+  $('#fTime').hidden = !state.store.pickup_enabled;
 
-  if (!state.days.some((d) => d.key === state.day?.key)) {
-    state.day = state.days[0];
+  if (state.store.pickup_enabled) {
+    state.days = availableDays(state.store);
+    if (!state.days.length) return toast('Sem horários disponíveis. Fale com a gente no WhatsApp.', 'bad');
+
+    if (!state.days.some((d) => d.key === state.day?.key)) {
+      state.day = state.days[0];
+      state.slot = null;
+    }
+    renderDays();
+    renderTimes();
+  } else {
+    state.day = null;
     state.slot = null;
   }
 
-  renderDays();
-  renderTimes();
   renderSummary();
   openSheet('#coSheet');
 }
@@ -562,8 +572,10 @@ async function submit(e) {
   const checks = [
     ['#fName', name.length >= 2],
     ['#fPhone', isValidPhone(phone)],
-    ['#fDate', Boolean(state.day)],
-    ['#fTime', Boolean(state.slot)],
+    ...(state.store.pickup_enabled ? [
+      ['#fDate', Boolean(state.day)],
+      ['#fTime', Boolean(state.slot)],
+    ] : []),
   ];
   let firstBad = null;
   for (const [sel, ok] of checks) {
@@ -586,10 +598,9 @@ async function submit(e) {
   state.token = state.token || crypto.randomUUID();
 
   try {
-    const pickupAt = new Date(state.slot);
     const res = await createOrder({
       name, phone, notes,
-      pickupAt: pickupAt.toISOString(),
+      pickupAt: state.slot ? new Date(state.slot).toISOString() : null,
       items: cart.toOrderItems(),
       expectedTotal: cart.totalCents(),
       token: state.token,
@@ -649,6 +660,46 @@ function showConfirmation(order) {
   $('#okGo').href = `https://wa.me/${state.store.whatsapp}?text=${encodeURIComponent(buildMessage(order))}`;
   closeSheets();
   setTimeout(() => openSheet('#okSheet'), 220);
+}
+
+/** Recibo do cliente no mesmo formato de cupom usado no painel — mesmas
+ *  classes .ticket__*, estilo compartilhado em styles.css. */
+function ticketHtml(order) {
+  const items = order.items.map((i) => {
+    const addons = (i.addons || []).map((a) => a.name).join(', ');
+    return `
+      <div class="ticket__item">
+        <span>${i.quantity}x ${escapeHtml(i.name)}</span>
+        <span>${money(i.subtotal_cents)}</span>
+      </div>
+      ${addons ? `<div class="ticket__sub">+ ${escapeHtml(addons)}</div>` : ''}
+      ${i.notes ? `<div class="ticket__sub">obs: ${escapeHtml(i.notes)}</div>` : ''}`;
+  }).join('');
+
+  return `
+    <div class="ticket__h">${escapeHtml(state.store.name.toUpperCase())}</div>
+    <div class="ticket__hr"></div>
+    <div class="ticket__label">Cliente</div>
+    <div class="ticket__big">${escapeHtml(order.customer_name)}</div>
+    <div class="ticket__label">Telefone</div>
+    <div class="ticket__v">${maskPhone(order.customer_phone)}</div>
+    <div class="ticket__label">Retirada</div>
+    <div class="ticket__v ticket__v--big">${state.day && state.slot ? pickupLabel(state.day, state.slot) : 'A combinar'}</div>
+    <div class="ticket__hr"></div>
+    ${items}
+    ${order.notes ? `<div class="ticket__hr"></div><div class="ticket__label">Observações</div><div class="ticket__v">${escapeHtml(order.notes)}</div>` : ''}
+    <div class="ticket__hr"></div>
+    <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(order.total_cents)}</span></div>
+    <div class="ticket__hr"></div>
+    <div class="ticket__foot">Pedido ${escapeHtml(order.code)} · ${dateTimeBR(order.created_at)}</div>`;
+}
+
+function printOrderTicket() {
+  if (!state.order) return;
+  $('#printTicket').innerHTML = ticketHtml(state.order);
+  document.body.classList.add('print-ticket');
+  window.print();
+  document.body.classList.remove('print-ticket');
 }
 
 /** Mensagem do WhatsApp: cópia amigável. A fonte oficial é o banco. */
@@ -822,6 +873,7 @@ function bind() {
   $('#okGo').addEventListener('click', () => {
     setTimeout(() => { cart.clear(); state.token = null; }, 400);
   });
+  $('#okPrint').addEventListener('click', printOrderTicket);
   $('#okDone').addEventListener('click', () => {
     cart.clear(); state.token = null; state.order = null; closeSheets();
   });
