@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=22';
-import { fetchCatalog, createOrder } from './data.js?v=22';
-import * as cart from './cart.js?v=22';
-import { ESFIHA, placeholder } from './icons.js?v=22';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=22';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=23';
+import { fetchCatalog, createOrder } from './data.js?v=23';
+import * as cart from './cart.js?v=23';
+import { ESFIHA, placeholder } from './icons.js?v=23';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=23';
 
 const state = {
   store: null,
@@ -715,7 +715,6 @@ function draftTicketHtml() {
 
   return `
     <div class="ticket__h">${escapeHtml(state.store.name.toUpperCase())}</div>
-    <div class="ticket__v" style="text-align:center">RASCUNHO — AINDA NÃO ENVIADO</div>
     <div class="ticket__hr"></div>
     <div class="ticket__label">Cliente</div>
     <div class="ticket__big">${escapeHtml(name || 'Cliente')}</div>
