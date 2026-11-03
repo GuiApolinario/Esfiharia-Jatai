@@ -5,11 +5,11 @@
    O total mostrado aqui é só para a interface; o valor oficial vem do banco.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=23';
-import { fetchCatalog, createOrder } from './data.js?v=23';
-import * as cart from './cart.js?v=23';
-import { ESFIHA, placeholder } from './icons.js?v=23';
-import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=23';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isValidPhone, maskPhone, money, toast } from './utils.js?v=24';
+import { fetchCatalog, createOrder } from './data.js?v=24';
+import * as cart from './cart.js?v=24';
+import { ESFIHA, placeholder } from './icons.js?v=24';
+import { availableDays, isOpenNow, todayHoursLabel, pickupLabel, timeLabel, dateKey, WEEKDAYS } from './schedule.js?v=24';
 
 const state = {
   store: null,
@@ -679,6 +679,7 @@ function ticketItemHtml({ qty, name, addons, notes, cents }) {
 /** Recibo do cliente no mesmo formato de cupom usado no painel — mesmas
  *  classes .ticket__*, estilo compartilhado em styles.css. */
 function ticketHtml(order) {
+  const n = order.items.reduce((s, i) => s + i.quantity, 0);
   const items = order.items.map((i) => ticketItemHtml({
     qty: i.quantity, name: i.name, addons: i.addons, notes: i.notes, cents: i.subtotal_cents,
   })).join('');
@@ -696,6 +697,7 @@ function ticketHtml(order) {
     ${items}
     ${order.notes ? `<div class="ticket__hr"></div><div class="ticket__label">Observações</div><div class="ticket__v">${escapeHtml(order.notes)}</div>` : ''}
     <div class="ticket__hr"></div>
+    <div class="ticket__item"><span>Total de itens</span><span>${n}</span></div>
     <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(order.total_cents)}</span></div>
     <div class="ticket__hr"></div>
     <div class="ticket__foot">Pedido ${escapeHtml(order.code)} · ${dateTimeBR(order.created_at)}</div>`;
@@ -725,6 +727,7 @@ function draftTicketHtml() {
     ${items}
     ${notes ? `<div class="ticket__hr"></div><div class="ticket__label">Observações</div><div class="ticket__v">${escapeHtml(notes)}</div>` : ''}
     <div class="ticket__hr"></div>
+    <div class="ticket__item"><span>Total de itens</span><span>${cart.count()}</span></div>
     <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(cart.totalCents())}</span></div>`;
 }
 

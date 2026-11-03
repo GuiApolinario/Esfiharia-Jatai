@@ -3,10 +3,10 @@
    Também mobile first: o dono precisa mexer no cardápio pelo celular.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=23';
-import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=23';
-import { ESFIHA } from './icons.js?v=23';
-import * as data from './data.js?v=23';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, isImageIcon, maskPhone, money, onlyDigits, parseMoney, shrinkImage, toast } from './utils.js?v=24';
+import { isConfigured, SETUP_MESSAGE } from './supabase.js?v=24';
+import { ESFIHA } from './icons.js?v=24';
+import * as data from './data.js?v=24';
 
 const PADRAO = { primary: '#c8102e', accent: '#f2b233' };
 
@@ -375,6 +375,7 @@ function openOrder(id) {
  *  e total — nessa ordem, pensado pra impressora térmica/vertical. */
 function ticketHtml(o) {
   const storeName = S.settings?.store_name || 'Esfiharia Jataí';
+  const n = (o.order_items || []).reduce((s, i) => s + i.quantity, 0);
   const items = (o.order_items || []).map((i) => {
     const addons = (i.order_item_addons || []).map((a) => a.addon_name_snapshot).join(', ');
     return `
@@ -398,6 +399,7 @@ function ticketHtml(o) {
     ${items}
     ${o.notes ? `<div class="ticket__hr"></div><div class="ticket__label">Observações</div><div class="ticket__v">${escapeHtml(o.notes)}</div>` : ''}
     <div class="ticket__hr"></div>
+    <div class="ticket__item"><span>Total de itens</span><span>${n}</span></div>
     <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(o.total_cents)}</span></div>
     <div class="ticket__hr"></div>
     <div class="ticket__foot">Pedido ${escapeHtml(o.public_code)} · ${dateTimeBR(o.created_at)}</div>`;
@@ -423,6 +425,7 @@ function printOrder(id) {
 /** Mesmo bloco do recibo individual, mas sem o cabeçalho da loja (que já
  *  aparece uma vez só no topo da lista) — usado dentro de printOrdersList(). */
 function ticketOrderBlock(o) {
+  const n = (o.order_items || []).reduce((s, i) => s + i.quantity, 0);
   const items = (o.order_items || []).map((i) => {
     const addons = (i.order_item_addons || []).map((a) => a.addon_name_snapshot).join(', ');
     return `
@@ -440,6 +443,7 @@ function ticketOrderBlock(o) {
       <div class="ticket__v">${maskPhone(o.customer_phone)} · ${escapeHtml(o.public_code)}</div>
       ${items}
       ${o.notes ? `<div class="ticket__sub">obs geral: ${escapeHtml(o.notes)}</div>` : ''}
+      <div class="ticket__item"><span>Total de itens</span><span>${n}</span></div>
       <div class="ticket__item ticket__item--tot"><span>Total</span><span>${money(o.total_cents)}</span></div>
     </div>`;
 }
