@@ -1,0 +1,14 @@
+{
+  "name": "Caixa — Esfiharia Jataí",
+  "short_name": "Caixa Jataí",
+  "description": "App do caixa: monta o pedido do cliente no balcão e imprime, funciona sem internet.",
+  "start_url": "/caixa.html",
+  "scope": "/caixa.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fdecee",
+  "theme_color": "#c8102e",
+  "icons": [
+    { "src": "/img/splash.jpg", "sizes": "900x900", "type": "image/jpeg", "purpose": "any" }
+  ]
+}

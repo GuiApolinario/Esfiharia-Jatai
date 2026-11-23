@@ -1,0 +1,12 @@
+/* =============================================================================
+   Caixa — ajustes por cima de styles.css (vitrine) e admin.css (cabeçalho,
+   cartões de estatística, listas). Nada aqui deve vazar para index.html nem
+   admin.html, por isso tudo aqui é escopado em body.caixa.
+   ========================================================================== */
+
+/* Cabeçalho tem mais informação que o do painel (nome + sincronismo + dois
+   botões) — permite quebrar linha em telas estreitas, sem cortar nada. */
+body.caixa .top { flex-wrap: wrap; row-gap: 8px; }
+body.caixa .top__u { display: block; } /* aqui é aviso de cardápio desatualizado, não decoração — sempre visível */
+
+#ordersBadge { font-weight: 800; }

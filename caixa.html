@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caixa — Esfiharia Jataí</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#c8102e">
+<meta name="description" content="App do caixa da Esfiharia Jataí — monta o pedido do cliente no balcão e imprime, funciona sem internet.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path fill='%23eebc6f' d='M32 4.6c8.4-.2 15.2 2.6 20.6 7.7 5.4 5.2 8 11.8 7.7 19.9-.3 8-3.2 14.6-8.7 19.4C46.1 56.4 39.6 58.6 32 58.4c-7.8.2-14.4-2.2-19.8-7.1C6.8 46.4 4 39.8 4 31.8c0-8 2.6-14.6 7.9-19.7C17.1 7 23.8 4.5 32 4.6Z'/><path fill='%23b96a33' d='M32 12.4c6.2-.1 11.3 1.7 15.2 5.5 3.9 3.7 5.8 8.4 5.7 14.1.1 5.7-1.8 10.4-5.8 14.1-3.9 3.6-9 5.4-15.1 5.3-6-.1-11-1.9-14.9-5.5-3.8-3.7-5.7-8.3-5.7-13.9 0-5.6 1.9-10.3 5.8-14 3.8-3.7 8.7-5.5 14.8-5.6Z'/><circle cx='24.5' cy='25.5' r='2.8' fill='%238f5127'/><circle cx='39' cy='24' r='2.1' fill='%238f5127'/><circle cx='30' cy='40' r='2.9' fill='%238f5127'/></svg>">
+<link rel="manifest" href="/manifest-caixa.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&display=swap">
+<!-- ?v=N muda a cada publicação, para o navegador não misturar HTML novo com JS/CSS antigo em cache -->
+<link rel="stylesheet" href="/css/styles.css?v=25">
+<link rel="stylesheet" href="/css/admin.css?v=25">
+<link rel="stylesheet" href="/css/caixa.css?v=25">
+</head>
+<body class="adm caixa">
+
+<header class="top">
+  <span class="top__n">🧾 Caixa — <span id="storeName">Esfiharia Jataí</span></span>
+  <span class="top__u" id="syncInfo">—</span>
+  <button class="btn btn--line" id="btnOrders">📋 Hoje <span id="ordersBadge"></span></button>
+  <button class="btn btn--line" id="btnSync">🔄 Sincronizar</button>
+</header>
+
+<div id="noticeSlot"></div>
+
+<div class="searchbar wrap" id="searchWrap">
+  <span class="searchbar__icon" aria-hidden="true">🔎</span>
+  <input id="search" type="search" placeholder="Buscar no cardápio" aria-label="Buscar no cardápio" autocomplete="off">
+  <button class="searchbar__clear" id="searchClear" aria-label="Limpar busca">✕</button>
+</div>
+
+<nav class="cats" id="cats" aria-label="Categorias"></nav>
+
+<main class="wrap" id="menu">
+  <div class="empty">
+    <div class="empty__ic">🍽️</div>
+    <strong>Nenhum cardápio salvo ainda.</strong>
+    <p>Toque em "Sincronizar" uma vez, com internet, para baixar o cardápio pro aparelho.</p>
+    <p style="margin-top:14px"><button class="btn btn--brand" id="firstSync">🔄 Sincronizar agora</button></p>
+  </div>
+</main>
+
+<div class="cartbar" id="cartbar">
+  <button class="cartbar__in" id="cartOpen">
+    <span aria-hidden="true">🛒</span>
+    <span style="text-align:left">
+      <span class="cartbar__c" id="cartCount">0 itens</span><br>
+      <span class="cartbar__t money" id="cartTotal">R$ 0,00</span>
+    </span>
+    <span class="cartbar__go">VER PEDIDO</span>
+  </button>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ============ folha: adicionais do produto ============ -->
+<section class="sheet" id="optSheet" role="dialog" aria-modal="true" aria-labelledby="optTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h">
+    <h2 id="optTitle">Personalizar</h2>
+    <button class="iconbtn" data-close aria-label="Fechar">✕</button>
+  </div>
+  <div class="sheet__b" id="optBody"></div>
+  <div class="sheet__f">
+    <button class="btn btn--brand btn--block btn--lg" id="optAdd">Adicionar</button>
+  </div>
+</section>
+
+<!-- ============ folha: carrinho ============ -->
+<section class="sheet" id="cartSheet" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h">
+    <h2 id="cartTitle">Pedido do cliente</h2>
+    <button class="iconbtn" id="cartClear" title="Esvaziar" aria-label="Esvaziar pedido">🗑️</button>
+    <button class="iconbtn" data-close aria-label="Fechar">✕</button>
+  </div>
+  <div class="sheet__b" id="cartBody"></div>
+  <div class="sheet__f" id="cartFoot" hidden>
+    <div class="tot">
+      <div class="tot__r"><span id="cartItems">0 itens</span><span class="money" id="cartSub">R$ 0,00</span></div>
+      <div class="tot__r tot__r--big"><span>Total</span><b class="money" id="cartBig">R$ 0,00</b></div>
+    </div>
+    <button class="btn btn--brand btn--block btn--lg" id="toCheckout">CONTINUAR</button>
+    <button class="btn btn--ghost btn--block" type="button" id="cartClearBtn" style="margin-top:8px">🗑️ Limpar pedido</button>
+  </div>
+</section>
+
+<!-- ============ folha: dados do cliente e impressão ============ -->
+<section class="sheet" id="coSheet" role="dialog" aria-modal="true" aria-labelledby="coTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h">
+    <h2 id="coTitle">Finalizar pedido</h2>
+    <button class="iconbtn" data-close aria-label="Fechar">✕</button>
+  </div>
+  <form class="sheet__b" id="coForm" novalidate>
+    <div class="f">
+      <label for="cName">Nome do cliente <span class="f__hint">(opcional)</span></label>
+      <input class="in" id="cName" type="text" placeholder="Ex.: Maria Silva" maxlength="80">
+    </div>
+
+    <div class="f">
+      <label for="cPhone">WhatsApp <span class="f__hint">(opcional)</span></label>
+      <input class="in" id="cPhone" type="tel" inputmode="numeric" autocomplete="off"
+             placeholder="(15) 99999-9999" maxlength="16">
+    </div>
+
+    <div class="f">
+      <label for="cNotes">Observações <span class="f__hint">(opcional)</span></label>
+      <textarea class="in" id="cNotes" maxlength="500" placeholder="Ex.: sem cebola em duas esfihas."></textarea>
+    </div>
+
+    <div class="sum" id="coSum"></div>
+  </form>
+  <div class="sheet__f">
+    <button class="btn btn--brand btn--block btn--lg" id="coFinish" type="submit" form="coForm">
+      <span aria-hidden="true">🖨️</span> Finalizar e Imprimir
+    </button>
+  </div>
+</section>
+
+<!-- ============ folha: pedidos de hoje ============ -->
+<section class="sheet" id="daySheet" role="dialog" aria-modal="true" aria-labelledby="dayTitle" aria-hidden="true">
+  <div class="sheet__grab"></div>
+  <div class="sheet__h">
+    <h2 id="dayTitle">Pedidos de hoje</h2>
+    <button class="iconbtn" data-close aria-label="Fechar">✕</button>
+  </div>
+  <div class="sheet__b">
+    <div class="stats" id="dayStats"></div>
+    <div class="rows" id="dayRows"></div>
+  </div>
+  <div class="sheet__f">
+    <button class="btn btn--brand btn--block btn--lg" id="printDayList">🖨️ Imprimir lista do dia</button>
+    <button class="btn btn--ghost btn--block" type="button" id="closeDay" style="margin-top:8px">🧹 Encerrar o dia</button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Recibo de impressão — só existe na hora de imprimir (ver @media print em styles.css). -->
+<div id="printTicket"></div>
+
+<script type="module" src="/js/caixa.js?v=25"></script>
+</body>
+</html>
