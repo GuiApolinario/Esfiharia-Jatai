@@ -8,16 +8,16 @@ const CACHE = 'caixa-v1';
 const SHELL = [
   '/caixa.html',
   '/manifest-caixa.json',
-  '/css/styles.css?v=26',
-  '/css/admin.css?v=26',
-  '/css/caixa.css?v=26',
-  '/js/caixa.js?v=26',
-  '/js/caixa-cart.js?v=26',
-  '/js/utils.js?v=26',
-  '/js/data.js?v=26',
-  '/js/icons.js?v=26',
-  '/js/supabase.js?v=26',
-  '/js/config.js?v=26',
+  '/css/styles.css?v=27',
+  '/css/admin.css?v=27',
+  '/css/caixa.css?v=27',
+  '/js/caixa.js?v=27',
+  '/js/caixa-cart.js?v=27',
+  '/js/utils.js?v=27',
+  '/js/data.js?v=27',
+  '/js/icons.js?v=27',
+  '/js/supabase.js?v=27',
+  '/js/config.js?v=27',
 ];
 
 self.addEventListener('install', (event) => {

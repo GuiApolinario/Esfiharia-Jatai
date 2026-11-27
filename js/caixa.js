@@ -8,9 +8,9 @@
    o mesmo pedido/código do site, de propósito, pra não competir com ele.
    ========================================================================== */
 
-import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, maskPhone, money, toast } from './utils.js?v=26';
-import * as cart from './caixa-cart.js?v=26';
-import { ESFIHA, placeholder } from './icons.js?v=26';
+import { $, $$, categoryIconHtml, dateTimeBR, escapeHtml, maskPhone, money, toast } from './utils.js?v=27';
+import * as cart from './caixa-cart.js?v=27';
+import { ESFIHA, placeholder } from './icons.js?v=27';
 
 /* fetchCatalog (e tudo que ele puxa: supabase-js vindo de CDN) só é importado
    na hora de sincronizar — assim abrir o app nunca depende de internet nem
@@ -99,7 +99,7 @@ async function syncCatalog() {
   const btns = [$('#btnSync'), $('#firstSync')].filter(Boolean);
   btns.forEach((b) => { b.disabled = true; b.dataset.old = b.textContent; b.textContent = 'Sincronizando…'; });
   try {
-    const { fetchCatalog } = await import('./data.js?v=26');
+    const { fetchCatalog } = await import('./data.js?v=27');
     const data = await fetchCatalog();
     const withStamp = { ...data, syncedAt: new Date().toISOString() };
     saveCatalogCache(withStamp);
